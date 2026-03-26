@@ -534,7 +534,7 @@
             <label>👥 파트 선택</label>
             <select id="calPartSelect" onchange="renderCalendar()">
               <option value="">-- 파트 선택 --</option>
-              <option value="1">발전1파트</option>
+              <option value="1" selected>발전1파트</option>
               <option value="2">발전2파트</option>
               <option value="3">발전3파트</option>
               <option value="4">발전4파트</option>
@@ -767,6 +767,7 @@ else if(editingId&&!imageCleared){const old=tasks.find(x=>x.id===editingId);if(o
     toast("항목이 추가되었습니다.");
   }
   resetForm();await refresh();
+if(currentView==='calendar') renderCalendar();
 }
 
 /* ★ getFiltered — 정렬 포함 */
