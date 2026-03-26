@@ -516,7 +516,7 @@ async function idbPut(t) {
 }
 async function idbDel(id) { lsSave(lsLoad().filter(x=>x.id!==id)); }
 
-let tasks=[], selectedIds=new Set(), editingId=null, currentImageDataUrl=null;
+let tasks=[], selectedIds=new Set(), editingId=null, currentImageDataUrl=null, imageCleared=false;
 let currentView='list', calYear=new Date().getFullYear(), calMonth=new Date().getMonth(), dayModalDate=null;
 
 function toast(msg,dur=2800){
@@ -576,6 +576,7 @@ function onImageChange(input){
 }
 function clearImage(){
   currentImageDataUrl=null;
+  imageCleared=true;
   document.getElementById("fImage").value="";
   document.getElementById("imgPreview").style.display="none";
   document.getElementById("imgClearBtn").style.display="none";
@@ -643,6 +644,7 @@ function resetForm(){
 function fillForm(t){
   if(!t) return;
   editingId=t.id;
+  imageCleared=false;
   document.getElementById("fTitle").value=t.title||"";
   document.getElementById("fMemo").value=t.memo||"";
   document.getElementById("fStart").value=t.startDate||"";
@@ -668,7 +670,8 @@ async function saveTask(){
   const memo=document.getElementById("fMemo").value.trim();
   let imageDataUrl=null;
   if(currentImageDataUrl) imageDataUrl=currentImageDataUrl;
-  else if(editingId){const old=tasks.find(x=>x.id===editingId);if(old) imageDataUrl=old.imageDataUrl||null;}
+else if(editingId&&!imageCleared){const old=tasks.find(x=>x.id===editingId);if(old) imageDataUrl=old.imageDataUrl||null;}
+
 
   if(editingId){
     const old=tasks.find(x=>x.id===editingId);
