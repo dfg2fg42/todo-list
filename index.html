@@ -36,7 +36,7 @@
       margin-bottom: 28px;
     }
     .app-header h1 { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; color: var(--accent); }
-    .app-header .subtitle { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+    .app-header .subtitle { font-size: 16px; color: var(--text); margin-top: 5px; font-weight: 600; }
 
     .main-grid {
       display: grid;
@@ -539,11 +539,11 @@
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>📅 기간 시작</label>
+            <label>📅 시작</label>
             <input id="fStart" type="date" readonly onclick="openDp('fStart')" style="cursor:pointer;" />
           </div>
           <div class="form-group">
-            <label>📅 기간 종료</label>
+            <label>📅 종료</label>
             <input id="fEnd" type="date" readonly onclick="openDp('fEnd')" style="cursor:pointer;" />
           </div>
         </div>
@@ -1108,8 +1108,8 @@ function resetForm(){
   document.getElementById("fImage").value="";
   document.getElementById("imgPreview").style.display="none";
   document.getElementById("imgClearBtn").style.display="none";
-  document.getElementById("formTitle").textContent="새 항목 추가";
-  document.getElementById("btnSave").textContent="저장";
+  document.getElementById("formTitle").textContent="➕새 항목 추가";
+  document.getElementById("btnSave").textContent="💾저장";
 }
 function fillForm(t){
   if(!t) return;
@@ -1125,8 +1125,8 @@ function fillForm(t){
   const p=document.getElementById("imgPreview"),b=document.getElementById("imgClearBtn");
   if(t.imageDataUrl){p.src=t.imageDataUrl;p.style.display="block";b.style.display="flex";}
   else{p.style.display="none";b.style.display="none";}
-  document.getElementById("formTitle").textContent="항목 수정";
-  document.getElementById("btnSave").textContent="업데이트";
+  document.getElementById("formTitle").textContent="📝 항목 수정";
+  document.getElementById("btnSave").textContent="🔃 업데이트";
   document.getElementById("fTitle").focus();
   window.scrollTo({top:0,behavior:"smooth"});
 }
@@ -1583,16 +1583,17 @@ function openDayModal(ds){
       const bt=t.done?"완료":(isOver?"기한초과":"진행중");
       return '<div class="task-item '+(t.done?"done-item":"")+'">'+
         '<div class="task-item-body">'+
-          '<div class="task-item-title">'+escHtml(t.title)+'</div>'+
+          '<div class="task-item-title">📒'+escHtml(t.title)+'</div>'+
           '<div class="task-item-meta">'+
             ((t.startDate||t.endDate)?"&#128197; "+fmtDate(t.startDate)+" ~ "+fmtDate(t.endDate):"")+
           '</div>'+
           (t.memo?'<div class="task-item-memo">&#128221; '+escHtml(t.memo)+'</div>':'')+
         '</div>'+
-        '<div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;">'+
-          '<span class="badge '+bc+'">'+bt+'</span>'+
-          '<button class="btn btn-ghost btn-sm" onclick="fillFormFromModal(\''+t.id+'\')">&#9998;</button>'+
-        '</div></div>';
+'<div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;">' +
+  '<span class="badge ' + bc + '">' + bt + '</span>' +
+  '<button class="btn btn-ghost btn-sm" onclick="fillFormFromModal(\'' + t.id + '\')">✏️</button>' +
+  '<button class="btn btn-danger btn-sm" onclick="deleteFromModal(\'' + t.id + '\')">🗑️</button>' +
+'</div></div>';
     }).join("");
   }
   document.getElementById("dayModalOverlay").classList.add("open");
@@ -1632,6 +1633,17 @@ function backupData() {
   toast('백업 파일이 저장되었습니다. (' + data.length + '개 항목)');
 }
 
+async function deleteFromModal(id) {
+  if(!confirm("이 항목을 삭제할까요?")) return;
+  await idbDel(id);
+  selectedIds.delete(id);
+  await refresh();
+  toast("항목이 삭제되었습니다.");
+  // 모달 내 목록 갱신 (날짜 재렌더)
+  if(dayModalDate) openDayModal(dayModalDate);
+  else closeDayModal();
+}
+
 async function restoreData(input) {
   const file = input.files && input.files[0];
   if(!file) return;
@@ -1669,8 +1681,8 @@ async function refresh(){
   buildYearSelect();
   const now=new Date();
   document.getElementById("filterMonth").value=now.getMonth()+1;
-  document.getElementById("todayLabel").textContent=
-    now.getFullYear()+"년 "+(now.getMonth()+1)+"월 "+now.getDate()+"일";
+  document.getElementById("todayLabel").textContent =
+  "🕰️ " + now.getFullYear() + "년 " + (now.getMonth()+1) + "월 " + now.getDate() + "일";
   updateNotiBanner();
   await refresh();
   setInterval(async()=>{await refresh();checkReminders();},30000);
