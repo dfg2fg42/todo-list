@@ -132,7 +132,6 @@
     .view-toggle button + button { border-left: 1.5px solid var(--border); }
     .view-toggle button.active { background: var(--accent); color: #fff; }
 
-    /* ★ 정렬 셀렉트 — 뷰 토글 오른쪽에 작게 */
     .sort-select-wrap {
       display: flex; align-items: center; gap: 6px;
     }
@@ -220,7 +219,6 @@
     }
     @keyframes fadeSlide { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: none; } }
 
-
     /* ── Backup / Restore ── */
     .backup-bar {
       display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
@@ -236,21 +234,6 @@
     .btn-restore:hover { background: #0284c7; }
 
     ::-webkit-scrollbar { width: 6px; }
-
-    /* ── Backup / Restore ── */
-    .backup-bar {
-      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
-      padding: 10px 14px; background: #f0fdf4;
-      border: 1px solid #bbf7d0; border-radius: 10px; margin-bottom: 0;
-    }
-    .backup-bar .bar-label {
-      font-size: 12px; font-weight: 700; color: #166534; flex: 1; white-space: nowrap;
-    }
-    .btn-backup  { background: #16a34a; color: #fff; }
-    .btn-backup:hover  { background: #15803d; }
-    .btn-restore { background: #0ea5e9; color: #fff; }
-    .btn-restore:hover { background: #0284c7; }
-
     ::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 9px; }
     .divider { height: 1px; background: var(--border); margin: 14px 0; }
     .panel-section { display: block; }
@@ -307,6 +290,21 @@
     .chip-over { background: #fee2e2; color: #991b1b; }
     .cal-more { font-size: 10px; color: var(--text-muted); font-weight: 600; margin-top: 2px; }
 
+    /* ── 공휴일 ── */
+    .cal-holiday {
+      font-size: 9px; font-weight: 700; color: #dc2626;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      display: block; margin-bottom: 2px; line-height: 1.4;
+    }
+    .cal-cell.is-holiday .cal-day-num { color: #dc2626 !important; }
+    .cal-cell.today.is-holiday .cal-day-num { background: #dc2626; color: #fff !important; }
+
+    /* ── 대체공휴일 전용 스타일 (주황색으로 구분) ── */
+    .cal-holiday.is-substitute {
+      color: #b45309;
+    }
+    .cal-cell.is-substitute-holiday .cal-day-num { color: #b45309 !important; }
+    .cal-cell.today.is-substitute-holiday .cal-day-num { background: #b45309; color: #fff !important; }
 
     /* ── Shift Badge ── */
     .shift-badge {
@@ -316,7 +314,7 @@
       letter-spacing: 0.5px; line-height: 1.5;
       white-space: nowrap; flex-shrink: 0;
     }
-    .shift-ju  { background: #22c55e; color: #ffffff; }
+    .shift-ju  { background: #22c55e; color: #fff; }
     .shift-hyu { background: #ffffff; color: #e53e3e; border: 1px solid #e53e3e; }
     .shift-ya  { background: #111111; color: #ffffff; }
 
@@ -337,6 +335,135 @@
 
     .shift-legend { display: flex; gap: 10px; flex-wrap: wrap; font-size: 11px; font-weight: 600; margin-left: auto; }
     .shift-legend-item { display: flex; align-items: center; gap: 4px; color: var(--text-muted); }
+
+
+    /* ── 달력 날짜 선택 ── */
+    .cal-cell.sel-start,
+    .cal-cell.sel-end {
+      border-color: var(--accent) !important;
+      background: #4361ee !important;
+    }
+    .cal-cell.sel-start .cal-day-num,
+    .cal-cell.sel-end .cal-day-num {
+      color: #fff !important;
+      background: transparent !important;
+    }
+    .cal-cell.in-range {
+      background: #dbeafe !important;
+      border-color: #bfdbfe !important;
+    }
+    .cal-cell.in-range .cal-day-num { color: #1e40af !important; }
+    .cal-selection-bar {
+      display: none;
+      align-items: center; gap: 10px; flex-wrap: wrap;
+      background: #eef2ff; border: 1.5px solid var(--accent);
+      border-radius: 10px; padding: 10px 14px; margin-bottom: 12px;
+      font-size: 12px; font-weight: 700; color: var(--accent);
+    }
+    .cal-selection-bar.open { display: flex; }
+    .cal-selection-bar .sel-info { flex: 1; white-space: nowrap; }
+    .cal-sel-mode-btn.active {
+      background: var(--accent) !important;
+      color: #fff !important;
+      border-color: var(--accent) !important;
+    }
+
+
+    /* ════════════════════
+       Custom Date Picker
+    ════════════════════ */
+    .dp-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.35); z-index: 10000;
+      align-items: center; justify-content: center;
+    }
+    .dp-overlay.open { display: flex; }
+    .dp-popup {
+      background: var(--surface); border-radius: var(--radius);
+      box-shadow: 0 8px 40px rgba(0,0,0,.22);
+      width: 320px; padding: 0; overflow: hidden;
+      user-select: none;
+    }
+    .dp-header {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--accent); color: #fff; padding: 14px 16px;
+    }
+    .dp-header-label {
+      display: flex; flex-direction: column; gap: 2px; cursor: pointer;
+    }
+    .dp-header-label .dp-year-lbl {
+      font-size: 12px; opacity: .85; font-weight: 600;
+    }
+    .dp-header-label .dp-date-lbl {
+      font-size: 20px; font-weight: 800; letter-spacing: -0.5px;
+    }
+    .dp-nav-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px 6px; border-bottom: 1px solid var(--border);
+    }
+    .dp-nav-row .dp-nav-title {
+      font-size: 14px; font-weight: 800; cursor: pointer; color: var(--accent);
+      padding: 4px 10px; border-radius: 7px; transition: background .14s;
+    }
+    .dp-nav-row .dp-nav-title:hover { background: var(--surface2); }
+    .dp-nav-btn {
+      width: 30px; height: 30px; border-radius: 7px; border: none;
+      background: var(--surface2); color: var(--text); font-size: 14px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: background .14s;
+    }
+    .dp-nav-btn:hover { background: var(--border); }
+
+    /* ── Day grid ── */
+    .dp-body { padding: 8px 12px 12px; }
+    .dp-dow-row {
+      display: grid; grid-template-columns: repeat(7, 1fr);
+      margin-bottom: 4px;
+    }
+    .dp-dow-cell {
+      text-align: center; font-size: 11px; font-weight: 700;
+      color: var(--text-muted); padding: 4px 0;
+    }
+    .dp-dow-cell:first-child { color: #e53e3e; }
+    .dp-dow-cell:last-child  { color: var(--accent); }
+    .dp-day-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+    .dp-day {
+      aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+      border-radius: 50%; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: all .14s; color: var(--text);
+    }
+    .dp-day:hover { background: var(--surface2); }
+    .dp-day.other-m { color: #ccc; pointer-events: none; }
+    .dp-day.dp-today { background: var(--surface2); border: 2px solid var(--accent); color: var(--accent); }
+    .dp-day.dp-selected { background: var(--accent) !important; color: #fff !important; border: none; }
+    .dp-day.dp-sunday  { color: #e53e3e; }
+    .dp-day.dp-sunday.dp-selected { color: #fff !important; }
+    .dp-day.dp-saturday { color: var(--accent); }
+    .dp-day.dp-saturday.dp-selected { color: #fff !important; }
+    .dp-day.dp-holiday  { color: #dc2626 !important; }
+    .dp-day.dp-holiday.dp-selected  { color: #fff !important; }
+
+    /* ── Month / Year grid ── */
+    .dp-grid-view { padding: 12px; display: grid; gap: 6px; }
+    .dp-grid-view.grid-month { grid-template-columns: repeat(4, 1fr); }
+    .dp-grid-view.grid-year  { grid-template-columns: repeat(4, 1fr); }
+    .dp-grid-item {
+      padding: 10px 4px; text-align: center; border-radius: 9px;
+      font-size: 13px; font-weight: 700; cursor: pointer;
+      border: 1.5px solid var(--border); background: var(--surface2);
+      color: var(--text); transition: all .14s;
+    }
+    .dp-grid-item:hover { border-color: var(--accent); color: var(--accent); background: #eef2ff; }
+    .dp-grid-item.cur { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .dp-grid-item.today-item { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Footer ── */
+    .dp-footer {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 14px 12px; gap: 8px;
+    }
+    .dp-footer .dp-today-btn { font-size: 12px; color: var(--accent); font-weight: 700; cursor: pointer; }
+    .dp-footer .dp-today-btn:hover { text-decoration: underline; }
 
     /* ── Day Modal ── */
     .day-modal-overlay {
@@ -413,11 +540,11 @@
         <div class="form-row">
           <div class="form-group">
             <label>📅 기간 시작</label>
-            <input id="fStart" type="date" />
+            <input id="fStart" type="date" readonly onclick="openDp('fStart')" style="cursor:pointer;" />
           </div>
           <div class="form-group">
             <label>📅 기간 종료</label>
-            <input id="fEnd" type="date" />
+            <input id="fEnd" type="date" readonly onclick="openDp('fEnd')" style="cursor:pointer;" />
           </div>
         </div>
         <div class="form-group">
@@ -467,7 +594,6 @@
             <button id="btnListView" class="active" onclick="setView('list')">&#128203; 목록</button>
             <button id="btnCalView" onclick="setView('calendar')">&#128197; 달력</button>
           </div>
-          <!-- ★ 정렬 셀렉트 — 오른쪽 작게 -->
           <div class="sort-select-wrap">
             <label for="filterSort">정렬</label>
             <select id="filterSort" onchange="filterList()">
@@ -499,11 +625,11 @@
             </div>
             <div class="form-group fg-date">
               <label style="text-align:center;">시작 일</label>
-              <input id="filterStart" type="date" oninput="filterList()" style="text-align:center;" />
+              <input id="filterStart" type="date" readonly onclick="openDp('filterStart', filterList)" style="text-align:center;cursor:pointer;" />
             </div>
             <div class="form-group fg-date">
               <label style="text-align:center;">종료 일</label>
-              <input id="filterEnd" type="date" oninput="filterList()" style="text-align:center;" />
+              <input id="filterEnd" type="date" readonly onclick="openDp('filterEnd', filterList)" style="text-align:center;cursor:pointer;" />
             </div>
             <div class="form-group fg-status">
               <label style="text-align:center;">상태</label>
@@ -513,7 +639,7 @@
                 <option value="done">완료</option>
               </select>
             </div>
-<button class="btn btn-ghost btn-sm" style="margin-top:8px; margin-left:auto; display:block;" onclick="resetForm()">초기화</button>
+            <button class="btn btn-ghost btn-sm" style="margin-top:8px; margin-left:auto; display:block;" onclick="resetFilter()">초기화</button>
           </div>
 
           <div class="bulk-bar">
@@ -534,10 +660,22 @@
             <h2 id="calTitle"></h2>
             <div class="cal-header-actions">
               <button class="btn btn-ghost btn-sm" onclick="goToday()">오늘</button>
+              <button class="btn btn-ghost btn-sm" onclick="openCalDpNav()">📅 날짜 선택</button>
               <button class="btn btn-ghost btn-sm" onclick="nextMonth()">다음 &#9654;</button>
             </div>
           </div>
-          <div class="cal-part-row">
+          <input type="hidden" id="calSelStartHidden" />
+        <input type="hidden" id="calSelEndHidden" />
+        <div class="cal-selection-bar" id="calSelBar">
+          <div style="display:flex;flex-direction:column;gap:4px;flex:1;">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:600;">선택 기간</div>
+            <div id="calSelInfo" style="font-size:13px;color:var(--accent);font-weight:800;">-</div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="addTaskForSel()">+ 일정 추가</button>
+          <button class="btn btn-ghost btn-sm" onclick="applySelToFilter()">📋 목록 필터</button>
+          <button class="btn btn-ghost btn-sm" onclick="clearSel()">✕ 초기화</button>
+        </div>
+        <div class="cal-part-row">
             <label>👥 파트 선택</label>
             <select id="calPartSelect" onchange="renderCalendar()">
               <option value="">-- 파트 선택 --</option>
@@ -583,10 +721,252 @@
   </div>
 </div>
 
+
+<!-- Custom Date Picker -->
+<div class="dp-overlay" id="dpOverlay" onclick="dpOverlayClick(event)">
+  <div class="dp-popup" onclick="event.stopPropagation()">
+    <!-- 헤더: 선택된 날짜 표시 -->
+    <div class="dp-header">
+      <div class="dp-header-label" onclick="dpToggleView('year')">
+        <span class="dp-year-lbl" id="dpHeaderYear">2026년</span>
+        <span class="dp-date-lbl" id="dpHeaderDate">날짜 선택</span>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="background:rgba(255,255,255,.2);color:#fff;border:none;" onclick="closeDp()">✕</button>
+    </div>
+    <!-- 네비게이션 -->
+    <div class="dp-nav-row" id="dpNavRow">
+      <button class="dp-nav-btn" onclick="dpPrev()">&#9664;</button>
+      <span class="dp-nav-title" id="dpNavTitle" onclick="dpToggleView('month')">2026년 3월</span>
+      <button class="dp-nav-btn" onclick="dpNext()">&#9654;</button>
+    </div>
+    <!-- 날짜 그리드 / 월 선택 / 년도 선택 -->
+    <div id="dpBodyWrap"></div>
+    <!-- 푸터 -->
+    <div class="dp-footer">
+      <span class="dp-today-btn" onclick="dpGoToday()">오늘</span>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="dpClear()">초기화</button>
+        <button class="btn btn-primary btn-sm" style="width:auto;" onclick="dpConfirm()">확인</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div class="toast-wrap" id="toastWrap"></div>
 
 <script>
+
+/* ════════════════════════════════════════════
+   Custom Date Picker
+════════════════════════════════════════════ */
+let _dpTargetId = null;
+let _dpYear = new Date().getFullYear();
+let _dpMonth = new Date().getMonth();
+let _dpSelected = null; // "YYYY-MM-DD"
+let _dpView = 'day';    // 'day' | 'month' | 'year'
+let _dpCallback = null; // 선택 후 콜백
+
+function openDp(inputId, callback) {
+  _dpTargetId = inputId;
+  _dpCallback = callback || null;
+  const input = document.getElementById(inputId);
+  const val = input ? input.value : '';
+  if(val) {
+    const d = new Date(val + 'T00:00:00');
+    _dpYear = d.getFullYear();
+    _dpMonth = d.getMonth();
+    _dpSelected = val;
+  } else {
+    const now = new Date();
+    _dpYear = now.getFullYear();
+    _dpMonth = now.getMonth();
+    _dpSelected = null;
+  }
+  _dpView = 'day';
+  dpRender();
+  document.getElementById('dpOverlay').classList.add('open');
+}
+
+function closeDp() {
+  document.getElementById('dpOverlay').classList.remove('open');
+}
+function dpOverlayClick(e) {
+  if(e.target === document.getElementById('dpOverlay')) closeDp();
+}
+
+function dpConfirm() {
+  if(_dpSelected && _dpTargetId) {
+    const input = document.getElementById(_dpTargetId);
+    if(input) {
+      input.value = _dpSelected;
+      input.dispatchEvent(new Event('input', {bubbles:true}));
+      input.dispatchEvent(new Event('change', {bubbles:true}));
+    }
+    if(_dpCallback) _dpCallback(_dpSelected);
+  }
+  closeDp();
+}
+
+function dpClear() {
+  _dpSelected = null;
+  if(_dpTargetId) {
+    const input = document.getElementById(_dpTargetId);
+    if(input) {
+      input.value = '';
+      input.dispatchEvent(new Event('input', {bubbles:true}));
+      input.dispatchEvent(new Event('change', {bubbles:true}));
+    }
+  }
+  closeDp();
+}
+
+function dpGoToday() {
+  const now = new Date();
+  _dpYear = now.getFullYear();
+  _dpMonth = now.getMonth();
+  _dpSelected = todayStr();
+  dpRender();
+}
+
+function dpPrev() {
+  if(_dpView === 'day') {
+    _dpMonth--; if(_dpMonth < 0) { _dpMonth = 11; _dpYear--; }
+  } else if(_dpView === 'year') {
+    _dpYear -= 12;
+  }
+  dpRender();
+}
+function dpNext() {
+  if(_dpView === 'day') {
+    _dpMonth++; if(_dpMonth > 11) { _dpMonth = 0; _dpYear++; }
+  } else if(_dpView === 'year') {
+    _dpYear += 12;
+  }
+  dpRender();
+}
+
+function dpToggleView(v) {
+  _dpView = (_dpView === v) ? 'day' : v;
+  dpRender();
+}
+
+function dpUpdateHeader() {
+  const yearEl = document.getElementById('dpHeaderYear');
+  const dateEl = document.getElementById('dpHeaderDate');
+  const navRow  = document.getElementById('dpNavRow');
+  const navTitle = document.getElementById('dpNavTitle');
+
+  yearEl.textContent = _dpYear + '년';
+  if(_dpSelected) {
+    const d = new Date(_dpSelected + 'T00:00:00');
+    const dnames = ['일','월','화','수','목','금','토'];
+    dateEl.textContent = (d.getMonth()+1) + '월 ' + d.getDate() + '일 (' + dnames[d.getDay()] + ')';
+  } else {
+    dateEl.textContent = '날짜 선택';
+  }
+
+  if(_dpView === 'year') {
+    navTitle.textContent = _dpYear + '년 선택';
+    navRow.style.display = 'flex';
+  } else if(_dpView === 'month') {
+    navTitle.textContent = _dpYear + '년 월 선택';
+    navRow.style.display = 'none';
+  } else {
+    navTitle.textContent = _dpYear + '년 ' + (_dpMonth+1) + '월';
+    navRow.style.display = 'flex';
+  }
+}
+
+function dpRender() {
+  dpUpdateHeader();
+  const wrap = document.getElementById('dpBodyWrap');
+  if(_dpView === 'day')   { wrap.innerHTML = dpBuildDayGrid(); }
+  else if(_dpView === 'month') { wrap.innerHTML = dpBuildMonthGrid(); }
+  else if(_dpView === 'year')  { wrap.innerHTML = dpBuildYearGrid(); }
+}
+
+function dpBuildDayGrid() {
+  const y = _dpYear, m = _dpMonth;
+  const firstDow = new Date(y, m, 1).getDay();
+  const dim = new Date(y, m+1, 0).getDate();
+  const dipm = new Date(y, m, 0).getDate();
+  const today = todayStr();
+  const dows = ['일','월','화','수','목','금','토'];
+
+  let html = '<div class="dp-body">';
+  html += '<div class="dp-dow-row">' + dows.map(d=>`<div class="dp-dow-cell">${d}</div>`).join('') + '</div>';
+  html += '<div class="dp-day-grid">';
+
+  // 이전달
+  for(let i = firstDow-1; i >= 0; i--) {
+    html += `<div class="dp-day other-m">${dipm-i}</div>`;
+  }
+  // 이번달
+  for(let d = 1; d <= dim; d++) {
+    const ds = makeDateStr(y, m, d);
+    const dow = new Date(ds+'T00:00:00').getDay();
+    const hol = getHoliday(ds);
+    let cls = 'dp-day';
+    if(ds === today)      cls += ' dp-today';
+    if(ds === _dpSelected) cls += ' dp-selected';
+    else if(dow === 0 || hol) cls += ' dp-sunday';
+    else if(dow === 6)    cls += ' dp-saturday';
+    html += `<div class="${cls}" onclick="dpSelectDay('${ds}')">${d}</div>`;
+  }
+  // 다음달
+  const total = firstDow + dim;
+  const remain = total % 7 === 0 ? 0 : 7 - (total % 7);
+  for(let d = 1; d <= remain; d++) {
+    html += `<div class="dp-day other-m">${d}</div>`;
+  }
+  html += '</div></div>';
+  return html;
+}
+
+function dpBuildMonthGrid() {
+  const mNames = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  const nowM = new Date().getMonth(), nowY = new Date().getFullYear();
+  let html = '<div class="dp-grid-view grid-month">';
+  mNames.forEach((mn, i) => {
+    let cls = 'dp-grid-item';
+    if(i === _dpMonth && _dpYear === (typeof _dpYear !== 'undefined' ? _dpYear : nowY)) cls += ' cur';
+    if(i === nowM && _dpYear === nowY) cls += ' today-item';
+    html += `<div class="${cls}" onclick="dpSelectMonth(${i})">${mn}</div>`;
+  });
+  html += '</div>';
+  return html;
+}
+
+function dpBuildYearGrid() {
+  const base = _dpYear - (_dpYear % 12);
+  const nowY = new Date().getFullYear();
+  let html = '<div class="dp-grid-view grid-year">';
+  for(let y = base; y < base+12; y++) {
+    let cls = 'dp-grid-item';
+    if(y === _dpYear) cls += ' cur';
+    if(y === nowY) cls += ' today-item';
+    html += `<div class="${cls}" onclick="dpSelectYear(${y})">${y}년</div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+function dpSelectDay(ds) {
+  _dpSelected = ds;
+  dpRender();
+}
+function dpSelectMonth(m) {
+  _dpMonth = m;
+  _dpView = 'day';
+  dpRender();
+}
+function dpSelectYear(y) {
+  _dpYear = y;
+  _dpView = 'month';
+  dpRender();
+}
+
 const LS_KEY = "todo_app_ls_v1";
 
 function lsLoad() {
@@ -760,9 +1140,7 @@ async function saveTask(){
   const memo=document.getElementById("fMemo").value.trim();
   let imageDataUrl=null;
   if(currentImageDataUrl) imageDataUrl=currentImageDataUrl;
-else if(editingId&&!imageCleared){const old=tasks.find(x=>x.id===editingId);if(old) imageDataUrl=old.imageDataUrl||null;}
-
-
+  else if(editingId&&!imageCleared){const old=tasks.find(x=>x.id===editingId);if(old) imageDataUrl=old.imageDataUrl||null;}
   if(editingId){
     const old=tasks.find(x=>x.id===editingId);
     await idbPut({...old,title,memo,startDate,endDate,reminderAt,imageDataUrl,
@@ -774,10 +1152,8 @@ else if(editingId&&!imageCleared){const old=tasks.find(x=>x.id===editingId);if(o
     toast("항목이 추가되었습니다.");
   }
   resetForm();await refresh();
-if(currentView==='calendar') renderCalendar();
 }
 
-/* ★ getFiltered — 정렬 포함 */
 function getFiltered(){
   const y=Number(document.getElementById("filterYear").value);
   const m=Number(document.getElementById("filterMonth").value);
@@ -898,14 +1274,87 @@ async function deleteOne(id){
   await idbDel(id); selectedIds.delete(id); await refresh(); toast("항목이 삭제되었습니다.");
 }
 
+/* ════════════════════════════════════════════
+   공휴일 + 대체공휴일 (Nager.Date API + fallback 병합)
+════════════════════════════════════════════ */
+const holidayCache = {};
+
+// 대체공휴일 포함 하드코딩 fallback 데이터
+// 대체공휴일 여부를 구분하기 위해 값을 객체로 관리: { name, substitute }
+const KR_HOLIDAYS_FALLBACK = {
+  // ── 2024 ──
+  '2024-01-01':'신정','2024-02-09':'설날연휴','2024-02-10':'설날','2024-02-11':'설날연휴',
+  '2024-02-12':'설날(대체)','2024-03-01':'삼일절','2024-04-10':'국회의원선거일',
+  '2024-05-05':'어린이날','2024-05-06':'어린이날(대체)','2024-05-15':'부처님오신날',
+  '2024-06-06':'현충일','2024-08-15':'광복절','2024-09-16':'추석연휴',
+  '2024-09-17':'추석','2024-09-18':'추석연휴','2024-10-03':'개천절',
+  '2024-10-09':'한글날','2024-12-25':'성탄절',
+
+  // ── 2025 ──
+  '2025-01-01':'신정','2025-01-28':'설날연휴','2025-01-29':'설날','2025-01-30':'설날연휴',
+  '2025-03-01':'삼일절','2025-03-03':'삼일절(대체)','2025-05-05':'어린이날',
+  '2025-05-06':'부처님오신날','2025-06-06':'현충일','2025-08-15':'광복절',
+  '2025-10-03':'개천절','2025-10-05':'추석연휴','2025-10-06':'추석',
+  '2025-10-07':'추석연휴','2025-10-08':'추석(대체)','2025-10-09':'한글날','2025-12-25':'성탄절',
+
+  // ── 2026 ──
+  '2026-01-01':'신정','2026-02-16':'설날연휴','2026-02-17':'설날','2026-02-18':'설날연휴',
+  '2026-03-01':'삼일절','2026-03-02':'삼일절(대체)','2026-05-05':'어린이날',
+  '2026-05-24':'부처님오신날','2026-05-25':'부처님오신날(대체)','2026-06-03':'지방선거일',
+  '2026-06-06':'현충일','2026-08-15':'광복절','2026-08-17':'광복절(대체)',
+  '2026-09-24':'추석연휴','2026-09-25':'추석','2026-09-26':'추석연휴',
+  '2026-10-03':'개천절','2026-10-05':'개천절(대체)','2026-10-09':'한글날','2026-12-25':'성탄절',
+
+  // ── 2027 ──
+  '2027-01-01':'신정','2027-02-06':'설날연휴','2027-02-07':'설날','2027-02-08':'설날연휴',
+  '2027-02-09':'설날(대체)','2027-03-01':'삼일절','2027-05-05':'어린이날',
+  '2027-05-13':'부처님오신날','2027-06-06':'현충일','2027-08-15':'광복절',
+  '2027-08-16':'광복절(대체)','2027-09-14':'추석연휴','2027-09-15':'추석',
+  '2027-09-16':'추석연휴','2027-10-03':'개천절','2027-10-04':'개천절(대체)',
+  '2027-10-09':'한글날','2027-10-11':'한글날(대체)','2027-12-25':'성탄절'
+};
+
+// 대체공휴일 판단: 이름에 "(대체)" 포함 여부
+function isSubstituteHoliday(name) {
+  return name && name.includes('(대체)');
+}
+
+async function fetchHolidaysForYear(year) {
+  if(holidayCache[year]) return;
+
+  // ① 항상 fallback 먼저 로드 (대체공휴일 확실히 포함)
+  const fbMap = {};
+  Object.keys(KR_HOLIDAYS_FALLBACK).forEach(k => {
+    if(k.startsWith(year+'')) fbMap[k] = KR_HOLIDAYS_FALLBACK[k];
+  });
+
+  try {
+    const res = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/KR`);
+    if(!res.ok) throw new Error('API error');
+    const data = await res.json();
+    const apiMap = {};
+    data.forEach(h => { apiMap[h.date] = h.localName || h.name; });
+    // ② fallback 기반으로 API 병합 → fallback의 대체공휴일 보존
+    //    API에 없는 날짜(대체공휴일 등)는 fallback에서 채움
+    holidayCache[year] = Object.assign({}, fbMap, apiMap,
+      // API가 대체공휴일을 누락할 수 있으므로 fallback 대체공휴일은 항상 유지
+      Object.fromEntries(Object.entries(fbMap).filter(([,v]) => isSubstituteHoliday(v)))
+    );
+  } catch(e) {
+    // API 실패 → fallback 전체 사용
+    holidayCache[year] = fbMap;
+  }
+}
+
+function getHoliday(ds) {
+  const year = ds.substring(0,4);
+  if(!holidayCache[year]) return null;
+  return holidayCache[year][ds] || null;
+}
 
 /* ── Shift Pattern ── */
-// 패턴: [주,주,휴,휴,야,야,휴,휴] (8일 주기)
 const SHIFT_PATTERN = ['주','주','휴','휴','야','야','휴','휴'];
-// 기준일: 2026-03-26
 const SHIFT_ANCHOR = new Date('2026-03-26T00:00:00');
-// 각 파트별 3월26일 기준 사이클 오프셋
-// 발전3파트=0(주), 발전2파트=2(휴), 발전1파트=4(야), 발전4파트=6(휴)
 const SHIFT_OFFSETS = {'1':4, '2':2, '3':0, '4':6};
 
 function getShiftForDate(ds, part) {
@@ -927,6 +1376,75 @@ function shiftBadgeHtml(shift) {
 }
 
 /* ── Calendar ── */
+// 날짜 선택 상태
+let calSelStart = null;  // "YYYY-MM-DD"
+let calSelEnd   = null;
+
+function openCalDpNav() {
+  // 날짜 선택 → 해당 월로 달력 이동
+  const tempId = '__calNavInput__';
+  let tmp = document.getElementById(tempId);
+  if(!tmp) {
+    tmp = document.createElement('input');
+    tmp.id = tempId; tmp.type = 'hidden';
+    document.body.appendChild(tmp);
+  }
+  // 현재 달력 기준 날짜로 팝업 열기
+  tmp.value = makeDateStr(calYear, calMonth, 1);
+  openDp(tempId, function(ds) {
+    const d = new Date(ds + 'T00:00:00');
+    calYear  = d.getFullYear();
+    calMonth = d.getMonth();
+    renderCalendar();
+  });
+}
+
+function clearSel(rerender = true) {
+  calSelStart = null; calSelEnd = null;
+  document.getElementById("calSelBar").classList.remove("open");
+  if(rerender) renderCalendar();
+}
+
+function updateSelBar() {
+  const bar = document.getElementById("calSelBar");
+  const info = document.getElementById("calSelInfo");
+  if(!calSelStart) { bar.classList.remove("open"); return; }
+  bar.classList.add("open");
+  const s = fmtDate(calSelStart);
+  const e = calSelEnd ? fmtDate(calSelEnd) : "?";
+  if(calSelStart === calSelEnd || !calSelEnd) {
+    info.textContent = "📅 " + s + " (종료 날짜를 선택하세요)";
+  } else {
+    info.textContent = "📅 " + s + " ~ " + e;
+  }
+}
+
+function handleCalCellClick(ds) {
+  openDayModal(ds);
+}
+
+function addTaskForSel() {
+  if(!calSelStart) { toast("날짜를 먼저 선택하세요."); return; }
+  const end = calSelEnd || calSelStart;
+  resetForm();
+  document.getElementById("fStart").value = calSelStart;
+  document.getElementById("fEnd").value   = end;
+  setView("list");
+  window.scrollTo({top:0, behavior:"smooth"});
+  document.getElementById("fTitle").focus();
+  toast("선택 기간이 입력란에 적용되었습니다.");
+}
+
+function applySelToFilter() {
+  if(!calSelStart) { toast("날짜를 먼저 선택하세요."); return; }
+  const end = calSelEnd || calSelStart;
+  document.getElementById("filterStart").value = calSelStart;
+  document.getElementById("filterEnd").value   = end;
+  setView("list");
+  filterList();
+  toast("선택 기간으로 목록 필터가 적용되었습니다.");
+}
+
 const MNAMES=["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"];
 const DNAMES=["일","월","화","수","목","금","토"];
 
@@ -941,8 +1459,13 @@ function getTasksForDay(ds){
     return ds>=s&&ds<=e;
   });
 }
-function renderCalendar(){
+async function renderCalendar(){
   const y=calYear,m=calMonth;
+  await Promise.all([
+    fetchHolidaysForYear(y),
+    fetchHolidaysForYear(y-1),
+    fetchHolidaysForYear(y+1)
+  ]);
   document.getElementById("calTitle").textContent=y+"년 "+MNAMES[m];
   const firstDow=new Date(y,m,1).getDay();
   const dim=new Date(y,m+1,0).getDate();
@@ -970,8 +1493,29 @@ function renderCalendar(){
     const ds=makeDateStr(cell.y,cell.m,cell.d);
     const dow=idx%7;
     const el=document.createElement("div");
-    el.className="cal-cell"+(cell.other?" other-month":"")+(!cell.other&&ds===today?" today":"")+(dow===0?" dow-sun":dow===6?" dow-sat":"");
-    if(!cell.other) el.onclick=()=>openDayModal(ds);
+    const holiday=(!cell.other)?getHoliday(ds):null;
+    const isSub = holiday ? isSubstituteHoliday(holiday) : false;
+
+    let cls="cal-cell";
+    if(cell.other) cls+=" other-month";
+    if(!cell.other&&ds===today) cls+=" today";
+    if(dow===0) cls+=" dow-sun";
+    if(dow===6) cls+=" dow-sat";
+    if(holiday && !isSub) cls+=" is-holiday";
+    if(holiday && isSub) cls+=" is-substitute-holiday";
+    // 선택 날짜 강조
+    if(calSelStart && calSelEnd && !cell.other) {
+      const sStart = calSelStart <= calSelEnd ? calSelStart : calSelEnd;
+      const sEnd   = calSelStart <= calSelEnd ? calSelEnd   : calSelStart;
+      if(ds === sStart) cls+=" sel-start";
+      else if(ds === sEnd) cls+=" sel-end";
+      else if(ds > sStart && ds < sEnd) cls+=" in-range";
+    } else if(calSelStart && !calSelEnd && !cell.other && ds === calSelStart) {
+      cls+=" sel-start";
+    }
+
+    el.className=cls;
+    if(!cell.other) el.onclick=()=>handleCalCellClick(ds);
 
     const numRow=document.createElement("div");
     numRow.style.cssText="display:flex;align-items:center;gap:4px;margin-bottom:3px;";
@@ -992,6 +1536,13 @@ function renderCalendar(){
       }
     }
     el.appendChild(numRow);
+
+    if(!cell.other && holiday){
+      const hd=document.createElement("span");
+      hd.className="cal-holiday" + (isSub ? " is-substitute" : "");
+      hd.textContent=holiday; hd.title=holiday;
+      el.appendChild(hd);
+    }
 
     if(!cell.other){
       const dt=getTasksForDay(ds);
@@ -1017,7 +1568,10 @@ function openDayModal(ds){
   dayModalDate=ds;
   const parts=ds.split("-");
   const dow=DNAMES[new Date(ds+"T00:00:00").getDay()];
-  document.getElementById("dayModalTitle").textContent=parts[0]+"년 "+Number(parts[1])+"월 "+Number(parts[2])+"일 ("+dow+")";
+  const holiday=getHoliday(ds);
+  let titleText=parts[0]+"년 "+Number(parts[1])+"월 "+Number(parts[2])+"일 ("+dow+")";
+  if(holiday) titleText+=" 🎌 "+holiday;
+  document.getElementById("dayModalTitle").textContent=titleText;
   const body=document.getElementById("dayModalBody");
   const dt=getTasksForDay(ds);
   if(dt.length===0){
@@ -1031,7 +1585,8 @@ function openDayModal(ds){
         '<div class="task-item-body">'+
           '<div class="task-item-title">'+escHtml(t.title)+'</div>'+
           '<div class="task-item-meta">'+
-            ((t.startDate||t.endDate)?"&#128197; "+fmtDate(t.startDate)+" ~ "+fmtDate(t.endDate):"")+'</div>'+
+            ((t.startDate||t.endDate)?"&#128197; "+fmtDate(t.startDate)+" ~ "+fmtDate(t.endDate):"")+
+          '</div>'+
           (t.memo?'<div class="task-item-memo">&#128221; '+escHtml(t.memo)+'</div>':'')+
         '</div>'+
         '<div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;">'+
