@@ -277,6 +277,37 @@
     .chip-over { background: #fee2e2; color: #991b1b; }
     .cal-more { font-size: 10px; color: var(--text-muted); font-weight: 600; margin-top: 2px; }
 
+
+    /* ── Shift Badge ── */
+    .shift-badge {
+      display: inline-block;
+      font-size: 10px; font-weight: 800;
+      padding: 1px 5px; border-radius: 4px;
+      margin-bottom: 3px; letter-spacing: 0.5px;
+      line-height: 1.6;
+    }
+    .shift-ju  { background: #22c55e; color: #fff; }
+    .shift-hyu { background: #ffffff; color: #e53e3e; border: 1px solid #e53e3e; }
+    .shift-ya  { background: #111111; color: #ffffff; }
+
+    .cal-part-row {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 12px; flex-wrap: wrap;
+    }
+    .cal-part-row label {
+      font-size: 12px; font-weight: 700; color: var(--text-muted); white-space: nowrap;
+    }
+    .cal-part-row select {
+      font-size: 12px; font-family: inherit; padding: 5px 10px;
+      border: 1.5px solid var(--border); border-radius: 7px;
+      background: var(--surface2); color: var(--text);
+      outline: none; cursor: pointer; transition: border-color .18s;
+    }
+    .cal-part-row select:focus { border-color: var(--accent); }
+
+    .shift-legend { display: flex; gap: 10px; flex-wrap: wrap; font-size: 11px; font-weight: 600; margin-left: auto; }
+    .shift-legend-item { display: flex; align-items: center; gap: 4px; color: var(--text-muted); }
+
     /* ── Day Modal ── */
     .day-modal-overlay {
       display: none; position: fixed; inset: 0;
@@ -460,6 +491,21 @@
             <div class="cal-header-actions">
               <button class="btn btn-ghost btn-sm" onclick="goToday()">오늘</button>
               <button class="btn btn-ghost btn-sm" onclick="nextMonth()">다음 &#9654;</button>
+            </div>
+          </div>
+          <div class="cal-part-row">
+            <label>👥 파트 선택</label>
+            <select id="calPartSelect" onchange="renderCalendar()">
+              <option value="">-- 파트 선택 --</option>
+              <option value="1">발전1파트</option>
+              <option value="2">발전2파트</option>
+              <option value="3">발전3파트</option>
+              <option value="4">발전4파트</option>
+            </select>
+            <div class="shift-legend">
+              <div class="shift-legend-item"><span class="shift-badge shift-ju">주</span> 주간근무</div>
+              <div class="shift-legend-item"><span class="shift-badge shift-ya">야</span> 야간근무</div>
+              <div class="shift-legend-item"><span class="shift-badge shift-hyu">휴</span> 휴무</div>
             </div>
           </div>
           <div class="cal-legend">
@@ -807,6 +853,34 @@ async function deleteOne(id){
   await idbDel(id); selectedIds.delete(id); await refresh(); toast("항목이 삭제되었습니다.");
 }
 
+
+/* ── Shift Pattern ── */
+// 패턴: [주,주,휴,휴,야,야,휴,휴] (8일 주기)
+const SHIFT_PATTERN = ['주','주','휴','휴','야','야','휴','휴'];
+// 기준일: 2026-03-26
+const SHIFT_ANCHOR = new Date('2026-03-26T00:00:00');
+// 각 파트별 3월26일 기준 사이클 오프셋
+// 발전3파트=0(주), 발전2파트=2(휴), 발전1파트=4(야), 발전4파트=6(휴)
+const SHIFT_OFFSETS = {'1':4, '2':2, '3':0, '4':6};
+
+function getShiftForDate(ds, part) {
+  if(!part) return null;
+  const date = new Date(ds + 'T00:00:00');
+  const anchor = SHIFT_ANCHOR;
+  const diff = Math.round((date - anchor) / 86400000);
+  const offset = SHIFT_OFFSETS[part] || 0;
+  const idx = ((diff + offset) % 8 + 8) % 8;
+  return SHIFT_PATTERN[idx];
+}
+
+function shiftBadgeHtml(shift) {
+  if(!shift) return '';
+  if(shift === '주') return '<span class="shift-badge shift-ju">주</span>';
+  if(shift === '야') return '<span class="shift-badge shift-ya">야</span>';
+  if(shift === '휴') return '<span class="shift-badge shift-hyu">휴</span>';
+  return '';
+}
+
 /* ── Calendar ── */
 const MNAMES=["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"];
 const DNAMES=["일","월","화","수","목","금","토"];
@@ -856,6 +930,18 @@ function renderCalendar(){
 
     const num=document.createElement("div");
     num.className="cal-day-num"; num.textContent=cell.d; el.appendChild(num);
+
+    if(!cell.other){
+      const selPart=document.getElementById("calPartSelect").value;
+      if(selPart){
+        const shift=getShiftForDate(ds, selPart);
+        if(shift){
+          const sb=document.createElement("div");
+          sb.innerHTML=shiftBadgeHtml(shift);
+          el.appendChild(sb.firstChild);
+        }
+      }
+    }
 
     if(!cell.other){
       const dt=getTasksForDay(ds);
