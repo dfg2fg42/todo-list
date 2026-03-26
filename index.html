@@ -347,7 +347,7 @@
     .day-modal {
       background: var(--surface); border-radius: var(--radius);
       box-shadow: 0 8px 40px rgba(0,0,0,.18); padding: 24px;
-      width: 360px; max-width: 95vw; max-height: 80vh; overflow-y: auto;
+      width: 420px; max-width: 95vw; max-height: 85vh; overflow-y: auto;
     }
     .day-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
     .day-modal-header h3 { font-size: 16px; font-weight: 800; color: var(--accent); }
@@ -359,6 +359,13 @@
     .day-modal .task-item-body { flex: 1; }
     .day-modal .task-item-title { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
     .day-modal .task-item-meta { font-size: 11px; color: var(--text-muted); }
+    .day-modal .task-item-memo {
+      font-size: 12px; color: var(--text-muted);
+      white-space: pre-wrap; word-break: break-all;
+      margin-top: 5px; line-height: 1.6;
+      background: var(--surface2); border-radius: 6px;
+      padding: 6px 8px; border: 1px solid var(--border);
+    }
     .day-modal .task-item.done-item { opacity: 0.6; }
     .day-modal .task-item.done-item .task-item-title { text-decoration: line-through; }
     .day-modal-empty { text-align: center; color: var(--text-muted); font-size: 14px; padding: 24px 0; }
@@ -1019,8 +1026,8 @@ function openDayModal(ds){
         '<div class="task-item-body">'+
           '<div class="task-item-title">'+escHtml(t.title)+'</div>'+
           '<div class="task-item-meta">'+
-            ((t.startDate||t.endDate)?"&#128197; "+fmtDate(t.startDate)+" ~ "+fmtDate(t.endDate):"")+
-            (t.memo?"<br>&#128221; "+escHtml(t.memo.substring(0,60))+(t.memo.length>60?"...":""):"")+'</div>'+
+            ((t.startDate||t.endDate)?"&#128197; "+fmtDate(t.startDate)+" ~ "+fmtDate(t.endDate):"")+'</div>'+
+          (t.memo?'<div class="task-item-memo">&#128221; '+escHtml(t.memo)+'</div>':'')+
         '</div>'+
         '<div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;">'+
           '<span class="badge '+bc+'">'+bt+'</span>'+
