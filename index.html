@@ -290,7 +290,7 @@
     .cal-day-num {
       font-size: 12px; font-weight: 700; color: var(--text-muted);
       width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
-      border-radius: 50%; margin-bottom: 3px;
+      border-radius: 50%; flex-shrink: 0;
     }
     .cal-cell.today  .cal-day-num { background: var(--accent); color: #fff !important; }
     .cal-cell.dow-sun .cal-day-num { color: #e53e3e; }
@@ -310,11 +310,11 @@
 
     /* ── Shift Badge ── */
     .shift-badge {
-      display: inline-block;
-      font-size: 10px; font-weight: 800;
-      padding: 1px 5px; border-radius: 4px;
-      margin-bottom: 3px; letter-spacing: 0.5px;
-      line-height: 1.6;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 9px; font-weight: 800;
+      padding: 1px 4px; border-radius: 4px;
+      letter-spacing: 0.5px; line-height: 1.5;
+      white-space: nowrap; flex-shrink: 0;
     }
     .shift-ju  { background: #22c55e; color: #000; }
     .shift-hyu { background: #ffffff; color: #e53e3e; border: 1px solid #e53e3e; }
@@ -973,20 +973,25 @@ function renderCalendar(){
     el.className="cal-cell"+(cell.other?" other-month":"")+(!cell.other&&ds===today?" today":"")+(dow===0?" dow-sun":dow===6?" dow-sat":"");
     if(!cell.other) el.onclick=()=>openDayModal(ds);
 
+    const numRow=document.createElement("div");
+    numRow.style.cssText="display:flex;align-items:center;gap:4px;margin-bottom:3px;";
+
     const num=document.createElement("div");
-    num.className="cal-day-num"; num.textContent=cell.d; el.appendChild(num);
+    num.className="cal-day-num"; num.textContent=cell.d;
+    numRow.appendChild(num);
 
     if(!cell.other){
       const selPart=document.getElementById("calPartSelect").value;
       if(selPart){
         const shift=getShiftForDate(ds, selPart);
         if(shift){
-          const sb=document.createElement("div");
+          const sb=document.createElement("span");
           sb.innerHTML=shiftBadgeHtml(shift);
-          el.appendChild(sb.firstChild);
+          numRow.appendChild(sb.firstChild);
         }
       }
     }
+    el.appendChild(numRow);
 
     if(!cell.other){
       const dt=getTasksForDay(ds);
