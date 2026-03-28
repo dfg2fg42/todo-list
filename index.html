@@ -497,6 +497,22 @@
     .day-modal .task-item.done-item .task-item-title { text-decoration: line-through; }
     .day-modal-empty { text-align: center; color: var(--text-muted); font-size: 14px; padding: 24px 0; }
     .day-modal-add { width: 100%; margin-top: 12px; }
+
+/* ── 카테고리 ── */
+.badge-cat-1 { background: #dbeafe; color: #1d4ed8; }  /* 기동/정지 */
+.badge-cat-2 { background: #dcfce7; color: #15803d; }  /* 정비 */
+.badge-cat-3 { background: #fef9c3; color: #a16207; }  /* 안전 및 훈련 */
+.badge-cat-4 { background: #f3e8ff; color: #7e22ce; }  /* 기타 */
+
+.cat-filter-wrap { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
+.cat-filter-btn {
+  padding: 5px 12px; border-radius: 999px; font-size: 12px;
+  font-weight: 700; border: 1.5px solid var(--border);
+  background: var(--surface2); color: var(--text-muted); cursor: pointer;
+  transition: all .15s;
+}
+.cat-filter-btn.active { border-color: var(--accent); background: var(--accent); color: #fff; }
+
   </style>
 </head>
 <body>
@@ -532,6 +548,16 @@
         <div class="form-group">
           <label>📒 할 일 제목 *</label>
           <input id="fTitle" type="text" placeholder="제목을 입력하세요" />
+<div class="form-group">
+  <label>🏷️ 카테고리</label>
+  <select id="fCategory">
+    <option value="">-- 선택 안함 --</option>
+    <option value="기동/정지">🔵 기동/정지</option>
+    <option value="정비">🟢 정비</option>
+    <option value="안전 및 훈련">🟡 안전 및 훈련</option>
+    <option value="기타">🟣 기타</option>
+  </select>
+</div>
         </div>
         <div class="form-group">
           <label>📝 메모</label>
@@ -649,6 +675,14 @@
             <button class="btn btn-success btn-sm" onclick="bulkDone()">완료</button>
             <button class="btn btn-danger btn-sm" onclick="bulkDelete()">🗑️삭제</button>
           </div>
+
+<div class="cat-filter-wrap">
+  <button class="cat-filter-btn active" onclick="setCatFilter('')" id="catAll">전체</button>
+  <button class="cat-filter-btn" onclick="setCatFilter('기동/정지')" id="cat1">🔵 기동/정지</button>
+  <button class="cat-filter-btn" onclick="setCatFilter('정비')" id="cat2">🟢 정비</button>
+  <button class="cat-filter-btn" onclick="setCatFilter('안전 및 훈련')" id="cat3">🟡 안전 및 훈련</button>
+  <button class="cat-filter-btn" onclick="setCatFilter('기타')" id="cat4">🟣 기타</button>
+</div>
 
           <div class="task-list" id="taskList"></div>
         </div>
@@ -1120,6 +1154,7 @@ function fillForm(t){
   document.getElementById("fStart").value=t.startDate||"";
   document.getElementById("fEnd").value=t.endDate||"";
   document.getElementById("fReminder").value=t.reminderAt||"";
+document.getElementById("fCategory").value = t.category || "";
   currentImageDataUrl=t.imageDataUrl||null;
   document.getElementById("fImage").value="";
   const p=document.getElementById("imgPreview"),b=document.getElementById("imgClearBtn");
@@ -1131,6 +1166,7 @@ function fillForm(t){
   window.scrollTo({top:0,behavior:"smooth"});
 }
 async function saveTask(){
+   const category = document.getElementById("fCategory").value;
   const title=document.getElementById("fTitle").value.trim();
   if(!title){toast("제목을 입력해 주세요.");document.getElementById("fTitle").focus();return;}
   const startDate=document.getElementById("fStart").value;
@@ -1143,12 +1179,12 @@ async function saveTask(){
   else if(editingId&&!imageCleared){const old=tasks.find(x=>x.id===editingId);if(old) imageDataUrl=old.imageDataUrl||null;}
   if(editingId){
     const old=tasks.find(x=>x.id===editingId);
-    await idbPut({...old,title,memo,startDate,endDate,reminderAt,imageDataUrl,
+    await idbPut({...old,title,memo,category,startDate,endDate,reminderAt,imageDataUrl,
       reminded:old.reminderAt!==reminderAt?false:(old.reminded||false)});
     toast("항목이 수정되었습니다.");
   } else {
     const id=(typeof crypto!=="undefined"&&crypto.randomUUID)?crypto.randomUUID():Date.now().toString();
-    await idbPut({id,title,memo,startDate,endDate,reminderAt,reminded:false,done:false,createdAt:Date.now(),imageDataUrl});
+    await idbPut({id,title,memo,category,startDate,endDate,reminderAt,reminded:false,done:false,createdAt:Date.now(),imageDataUrl});
     toast("항목이 추가되었습니다.");
   }
   resetForm();await refresh();
@@ -1172,6 +1208,7 @@ function getFiltered(){
     if((fs||fe)&&ts&&!overlap(ts,te,fs,fe)) return false;
     if(status==="todo"&&t.done) return false;
     if(status==="done"&&!t.done) return false;
+if(activeCatFilter && (t.category || '') !== activeCatFilter) return false;
     return true;
   });
 
@@ -1195,6 +1232,7 @@ function resetFilter(){
   document.getElementById("filterEnd").value="";
   document.getElementById("filterStatus").value="all";
   document.getElementById("filterSort").value="asc";
+
   filterList();
 }
 function filterList(){render(getFiltered());}
@@ -1379,6 +1417,16 @@ function shiftBadgeHtml(shift) {
 // 날짜 선택 상태
 let calSelStart = null;  // "YYYY-MM-DD"
 let calSelEnd   = null;
+let activeCatFilter = '';
+
+function setCatFilter(cat) {
+  activeCatFilter = cat;
+  document.querySelectorAll('.cat-filter-btn').forEach(b => b.classList.remove('active'));
+  const map = {'':'catAll','기동/정지':'cat1','정비':'cat2','안전 및 훈련':'cat3','기타':'cat4'};
+  const el = document.getElementById(map[cat]);
+  if(el) el.classList.add('active');
+  filterList();
+}
 
 function openCalDpNav() {
   // 날짜 선택 → 해당 월로 달력 이동
@@ -1429,6 +1477,7 @@ function addTaskForSel() {
   resetForm();
   document.getElementById("fStart").value = calSelStart;
   document.getElementById("fEnd").value   = end;
+document.getElementById("fCategory").value = "";
   setView("list");
   window.scrollTo({top:0, behavior:"smooth"});
   document.getElementById("fTitle").focus();
