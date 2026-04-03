@@ -382,6 +382,7 @@
       background: var(--surface); border-radius: var(--radius);
       box-shadow: 0 8px 40px rgba(0,0,0,.22);
       width: 320px; padding: 0; overflow: hidden;
+      min-height: 420px;
       user-select: none;
     }
     .dp-header {
@@ -426,7 +427,11 @@
     }
     .dp-dow-cell:first-child { color: #e53e3e; }
     .dp-dow-cell:last-child  { color: var(--accent); }
-    .dp-day-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+    .dp-day-grid {display: grid; grid-template-columns: repeat(7, 1fr);
+  grid-template-rows: repeat(6, 1fr);  /* ← 항상 6행 고정 */
+  gap: 2px;
+  min-height: 252px;                   /* ← 6행 높이 고정 */
+}
     .dp-day {
       aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
       border-radius: 50%; font-size: 13px; font-weight: 600;
@@ -663,7 +668,7 @@
               <label style="text-align:center;">상태</label>
               <select id="filterStatus" onchange="filterList()" style="text-align:center;">
                 <option value="all">전체</option>
-                <option value="todo">미완료</option>
+                <option value="todo" selected>미완료</option>
                 <option value="done">완료</option>
               </select>
             </div>
