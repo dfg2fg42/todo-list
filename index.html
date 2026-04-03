@@ -30,7 +30,7 @@
       word-break: keep-all;
     }
 
-    .app-wrap { max-width: 1100px; margin: 0 auto; }
+    .app-wrap { max-width: 1400px; margin: 0 auto; }
     .app-header {
       display: flex; align-items: center; justify-content: space-between;
       margin-bottom: 28px;
@@ -182,7 +182,7 @@
     .task-memo   { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; white-space: pre-wrap; }
     .task-thumb  { width: 80px; height: 80px; border-radius: 9px; object-fit: cover; border: 1px solid var(--border); cursor: pointer; margin-bottom: 6px; }
     .task-actions { display: flex; gap: 6px; }
-    .task-aside { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+    .task-aside { display: flex; flex-direction: row; align-items: center; gap: 6px; }
 
     .badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
     .badge-todo { background: #edf2ff; color: var(--accent); }
@@ -262,7 +262,7 @@
     .cal-dow.dow-sat { color: var(--accent); }
 
     .cal-cell {
-      min-height: 82px; border-radius: 8px; border: 1px solid var(--border);
+      min-height: 110px; border-radius: 8px; border: 1px solid var(--border);
       padding: 5px 4px 4px; background: var(--surface2);
       cursor: pointer; transition: border-color .16s, background .16s; overflow: hidden;
     }
@@ -280,7 +280,7 @@
     .cal-cell.dow-sat .cal-day-num { color: var(--accent); }
 
     .cal-task-chip {
-      font-size: 10px; font-weight: 600; padding: 2px 5px; border-radius: 4px;
+      font-size: 11px; font-weight: 600; padding: 2px 5px; border-radius: 4px;
       margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
       display: block; cursor: pointer; transition: opacity .14s;
     }
@@ -474,7 +474,7 @@
     .day-modal {
       background: var(--surface); border-radius: var(--radius);
       box-shadow: 0 8px 40px rgba(0,0,0,.18); padding: 24px;
-      width: 420px; max-width: 95vw; max-height: 85vh; overflow-y: auto;
+      width: 600px; max-width: 95vw; max-height: 85vh; overflow-y: auto;
     }
     .day-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
     .day-modal-header h3 { font-size: 16px; font-weight: 800; color: var(--accent); }
@@ -486,13 +486,15 @@
     .day-modal .task-item-body { flex: 1; }
     .day-modal .task-item-title { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
     .day-modal .task-item-meta { font-size: 11px; color: var(--text-muted); }
-    .day-modal .task-item-memo {
-      font-size: 12px; color: var(--text-muted);
-      white-space: pre-wrap; word-break: break-all;
-      margin-top: 5px; line-height: 1.6;
-      background: var(--surface2); border-radius: 6px;
-      padding: 6px 8px; border: 1px solid var(--border);
-    }
+.day-modal .task-item-memo {
+  font-size: 12px; color: var(--text-muted);
+  white-space: pre-wrap; word-break: break-all;
+  margin-top: 5px; line-height: 1.6;
+  background: var(--surface2); border-radius: 6px;
+  padding: 6px 8px; border: 1px solid var(--border);
+  max-height: 200px;   /* ← 원하는 높이로 조절 */
+  overflow-y: auto;    /* ← 넘치면 스크롤 */
+}
     .day-modal .task-item.done-item { opacity: 0.6; }
     .day-modal .task-item.done-item .task-item-title { text-decoration: line-through; }
     .day-modal-empty { text-align: center; color: var(--text-muted); font-size: 14px; padding: 24px 0; }
@@ -1253,6 +1255,11 @@ async function bulkDelete(){
   clearSelection();await refresh();toast(cnt+"개 항목이 삭제되었습니다.");
 }
 
+function getCatIcon(cat) {
+  const m = {'기동/정지':'🚥','정비':'🛠️','안전 및 훈련':'👷','기타':'🎸'};
+  return m[cat] || '';
+}
+
 function render(filtered){
   const list=document.getElementById("taskList");
   list.innerHTML="";
@@ -1292,7 +1299,10 @@ function render(filtered){
           '<button class="btn btn-danger btn-sm" onclick="deleteOne(\''+t.id+'\')">🗑️삭제</button>'+
         '</div>'+
       '</div>'+
-      '<div class="task-aside"><span class="badge '+sCls+'">'+sTxt+'</span></div>';
+      '<div class="task-aside">'+
+      (getCatIcon(t.category)?'<span style="font-size:13px;background:#fef9c3;color:#a16207;padding:2px 9px;border-radius:999px;font-weight:700;white-space:nowrap;" title="'+(t.category||'')+'">'+getCatIcon(t.category)+' '+(t.category||'')+'</span>':'')+
+      '<span class="badge '+sCls+'">'+sTxt+'</span>'+
+      '</div>';
     list.appendChild(div);
   });
 }
@@ -1599,7 +1609,8 @@ async function renderCalendar(){
         const isOver=isOverdue(t);
         const chip=document.createElement("div");
         chip.className="cal-task-chip "+(t.done?"chip-done":(isOver?"chip-over":"chip-todo"));
-        chip.textContent=t.title; chip.title=t.title;
+        const catIcon=getCatIcon(t.category);
+        chip.textContent=(catIcon?catIcon+' ':'')+t.title; chip.title=t.title+(t.category?' ['+t.category+']':'');
         chip.onclick=e=>{e.stopPropagation();openDayModal(ds);};
         el.appendChild(chip);
       });
@@ -1638,10 +1649,13 @@ function openDayModal(ds){
           '</div>'+
           (t.memo?'<div class="task-item-memo">&#128221; '+escHtml(t.memo)+'</div>':'')+
         '</div>'+
-'<div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;">' +
-  '<span class="badge ' + bc + '">' + bt + '</span>' +
-  '<button class="btn btn-ghost btn-sm" onclick="fillFormFromModal(\'' + t.id + '\')">✏️</button>' +
-  '<button class="btn btn-danger btn-sm" onclick="deleteFromModal(\'' + t.id + '\')">🗑️</button>' +
+'<div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;">'+
+  '<div style="display:flex;align-items:center;gap:5px;">'+
+  (getCatIcon(t.category)?'<span style="font-size:12px;background:#fef9c3;color:#a16207;padding:2px 8px;border-radius:999px;font-weight:700;white-space:nowrap;">'+getCatIcon(t.category)+' '+escHtml(t.category||'')+'</span>':'')+
+  '<span class="badge '+bc+'">'+bt+'</span>'+
+  '</div>'+
+  '<button class="btn btn-ghost btn-sm" onclick="fillFormFromModal(\''+t.id+'\')" >✏️</button>'+
+  '<button class="btn btn-danger btn-sm" onclick="deleteFromModal(\''+t.id+'\')" >🗑️</button>'+
 '</div></div>';
     }).join("");
   }
