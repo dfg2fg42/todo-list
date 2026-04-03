@@ -1220,8 +1220,8 @@ if(activeCatFilter && (t.category || '') !== activeCatFilter) return false;
   });
 
   filtered.sort((a,b)=>{
-    const da=a.endDate||a.startDate||null;
-    const db=b.endDate||b.startDate||null;
+    const da = a.startDate || null;  // ← 시작일만 사용
+    const db = b.startDate || null;
     if(da&&db) return sort==="asc"?da.localeCompare(db):db.localeCompare(da);
     if(da) return -1;
     if(db) return 1;
