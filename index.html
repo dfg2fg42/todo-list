@@ -573,6 +573,20 @@
     .range-btn:hover { border-color: var(--accent); }
     .range-btn.has-value { color: var(--text); font-weight: 600; }
 
+
+    /* ── 클릭 가능한 Stat Box ── */
+    .stat-box { cursor: pointer; transition: all .18s; }
+    .stat-box:hover { border-color: var(--accent); box-shadow: 0 4px 16px rgba(67,97,238,.12); }
+    .stat-box.stat-active {
+      border-color: var(--accent) !important;
+      background: #eef2ff !important;
+      box-shadow: 0 4px 16px rgba(67,97,238,.15);
+    }
+    .stat-box.stat-active .val { text-shadow: 0 2px 8px rgba(67,97,238,.2); }
+    .stat-box .sub-lbl {
+      font-size: 10px; color: var(--text-muted); margin-top: 2px; font-weight: 500;
+    }
+
   </style>
 </head>
 <body>
@@ -581,7 +595,7 @@
   <!-- Header -->
   <div class="app-header">
     <div>
-      <h1>✅ To-Do List [발전1파트] </h1>
+      <h1>✅ To-Do List</h1>
       <div class="subtitle" id="todayLabel"></div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
@@ -626,8 +640,7 @@
         <div class="form-group">
           <label>📅 기간 설정 (시작 ~ 종료)</label>
           <button type="button" class="range-btn" id="btnRangePicker" onclick="openRangePicker()">
-            <span id="filterRangeLabel" style="display:block; text-align:center;">📅 날짜를 선택하세요</span>
-
+            <span id="rangePickerLabel">📅 날짜를 선택하세요</span>
           </button>
           <input id="fStart" type="hidden" />
           <input id="fEnd" type="hidden" />
@@ -659,17 +672,20 @@
 
         <!-- Stats -->
         <div class="stats-row">
-          <div class="stat-box">
+          <div class="stat-box" id="statBoxAll" onclick="statClickAll()">
             <div class="val" id="statTotal">0</div>
             <div class="lbl">전체</div>
+            <div class="sub-lbl" id="statTotalSub"></div>
           </div>
-          <div class="stat-box">
+          <div class="stat-box" id="statBoxDone" onclick="statClickDone()">
             <div class="val" id="statDone" style="color:var(--success)">0</div>
             <div class="lbl">완료</div>
+            <div class="sub-lbl" id="statDoneSub"></div>
           </div>
-          <div class="stat-box">
+          <div class="stat-box" id="statBoxRemain" onclick="statClickRemain()">
             <div class="val" id="statRemain" style="color:var(--danger)">0</div>
             <div class="lbl">미완료</div>
+            <div class="sub-lbl" id="statRemainSub">전체 기준</div>
           </div>
         </div>
 
@@ -713,8 +729,7 @@
               <button type="button" class="range-btn" id="btnFilterRange"
                 onclick="openRangePicker('filterStart','filterEnd','filterRangeLabel','btnFilterRange',filterList)"
                 style="font-size:12px;padding:7px 10px;">
-                <span id="filterRangeLabel" style="display:block; text-align:center;">📅 날짜를 선택하세요</span>
-
+                <span id="filterRangeLabel">📅 날짜 선택</span>
               </button>
               <input id="filterStart" type="hidden" />
               <input id="filterEnd" type="hidden" />
@@ -1503,6 +1518,33 @@ function resetFilter(){
 
   filterList();
 }
+/* ── Stat Box 클릭 필터 ── */
+function statClickAll() {
+  // 전체: 상태 필터 'all', 월 필터 유지
+  document.getElementById("filterStatus").value = "all";
+  filterList();
+}
+function statClickDone() {
+  // 완료: 완료 항목만 표시
+  document.getElementById("filterStatus").value = "done";
+  filterList();
+}
+function statClickRemain() {
+  // 미완료: 미완료 항목을 전체 기간으로 표시 (월 필터 초기화)
+  document.getElementById("filterMonth").value = "0";
+  document.getElementById("filterStart").value = "";
+  document.getElementById("filterEnd").value = "";
+  updateRangeLabel("filterStart","filterEnd","filterRangeLabel","btnFilterRange");
+  document.getElementById("filterStatus").value = "todo";
+  filterList();
+}
+function updateStatActive() {
+  const status = document.getElementById("filterStatus").value;
+  document.getElementById("statBoxAll").classList.toggle("stat-active",    status === "all");
+  document.getElementById("statBoxDone").classList.toggle("stat-active",   status === "done");
+  document.getElementById("statBoxRemain").classList.toggle("stat-active", status === "todo");
+}
+
 function filterList(){render(getFiltered());}
 
 function selectAllFiltered(){getFiltered().forEach(t=>selectedIds.add(t.id));filterList();}
@@ -1530,9 +1572,28 @@ function getCatIcon(cat) {
 function render(filtered){
   const list=document.getElementById("taskList");
   list.innerHTML="";
+  // 전체: 모든 task
   document.getElementById("statTotal").textContent=tasks.length;
-  document.getElementById("statDone").textContent=tasks.filter(t=>t.done).length;
+  // 완료: 현재 선택된 년/월 기준으로 카운팅
+  const _sy=Number(document.getElementById("filterYear").value);
+  const _sm=Number(document.getElementById("filterMonth").value);
+  let _doneTasks;
+  if(_sm!==0){
+    const _ms=new Date(_sy,_sm-1,1), _me=new Date(_sy,_sm,0,23,59,59);
+    _doneTasks=tasks.filter(t=>{
+      if(!t.done) return false;
+      const te=parseDateOnly(t.endDate)||parseDateOnly(t.startDate);
+      return te&&te>=_ms&&te<=_me;
+    });
+    document.getElementById("statDoneSub").textContent=_sy+"년 "+_sm+"월 기준";
+  } else {
+    _doneTasks=tasks.filter(t=>t.done);
+    document.getElementById("statDoneSub").textContent=_sy+"년 전체 기준";
+  }
+  document.getElementById("statDone").textContent=_doneTasks.length;
+  // 미완료: 전체 기준 (월 필터 무관)
   document.getElementById("statRemain").textContent=tasks.filter(t=>!t.done).length;
+  updateStatActive();
   document.getElementById("bulkInfo").textContent=selectedIds.size+"개 선택됨";
 
   if(filtered.length===0){
