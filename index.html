@@ -520,6 +520,59 @@
 }
 .cat-filter-btn.active { border-color: var(--accent); background: var(--accent); color: #fff; }
 
+
+    /* ════════════════════
+       Range Date Picker
+    ════════════════════ */
+    .drp-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.35); z-index: 10001;
+      align-items: center; justify-content: center;
+    }
+    .drp-overlay.open { display: flex; }
+    .drp-popup {
+      background: var(--surface); border-radius: var(--radius);
+      box-shadow: 0 8px 40px rgba(0,0,0,.22);
+      width: 340px; padding: 0; overflow: hidden; user-select: none;
+    }
+    .drp-header {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--accent); color: #fff; padding: 14px 16px; gap: 10px;
+    }
+    .drp-header-info { display: flex; align-items: center; gap: 12px; flex: 1; }
+    .drp-slot { display: flex; flex-direction: column; gap: 2px; }
+    .drp-slot-lbl { font-size: 10px; opacity: .8; font-weight: 600; }
+    .drp-slot-val { font-size: 14px; font-weight: 800; letter-spacing: -0.3px; }
+    .drp-arrow { font-size: 18px; opacity: .6; }
+    .drp-nav-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px 6px; border-bottom: 1px solid var(--border);
+    }
+    .drp-nav-title { font-size: 14px; font-weight: 800; color: var(--accent); }
+    .drp-hint {
+      text-align: center; font-size: 12px; font-weight: 600; color: var(--accent);
+      padding: 5px 12px; background: #eef2ff; margin: 6px 12px 2px; border-radius: 7px;
+    }
+    .dp-day.drp-start, .dp-day.drp-end {
+      background: var(--accent) !important; color: #fff !important;
+      border-radius: 50% !important;
+    }
+    .dp-day.drp-in-range {
+      background: #dbeafe !important; color: #1e40af !important; border-radius: 0 !important;
+    }
+    .dp-day.drp-hover-end {
+      background: #c3d4fb !important; color: #1e40af !important; border-radius: 50% !important;
+    }
+    .range-btn {
+      width: 100%; text-align: left; justify-content: flex-start;
+      padding: 9px 12px; border-radius: 9px; font-size: 13px; font-weight: 500;
+      background: var(--surface2); color: var(--text-muted);
+      border: 1.5px solid var(--border); cursor: pointer;
+      transition: border-color .18s;
+    }
+    .range-btn:hover { border-color: var(--accent); }
+    .range-btn.has-value { color: var(--text); font-weight: 600; }
+
   </style>
 </head>
 <body>
@@ -528,7 +581,7 @@
   <!-- Header -->
   <div class="app-header">
     <div>
-      <h1>✅ To-Do List</h1>
+      <h1>✅ To-Do List [발전1파트] </h1>
       <div class="subtitle" id="todayLabel"></div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
@@ -570,15 +623,13 @@
           <label>📝 메모</label>
           <textarea id="fMemo" placeholder="상세 내용 입력..."></textarea>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>📅 시작</label>
-            <input id="fStart" type="date" readonly onclick="openDp('fStart')" style="cursor:pointer;" />
-          </div>
-          <div class="form-group">
-            <label>📅 종료</label>
-            <input id="fEnd" type="date" readonly onclick="openDp('fEnd')" style="cursor:pointer;" />
-          </div>
+        <div class="form-group">
+          <label>📅 기간 설정 (시작 ~ 종료)</label>
+          <button type="button" class="range-btn" id="btnRangePicker" onclick="openRangePicker()">
+            <span id="rangePickerLabel">📅 날짜를 선택하세요</span>
+          </button>
+          <input id="fStart" type="hidden" />
+          <input id="fEnd" type="hidden" />
         </div>
         <div class="form-group">
           <label>🔔 리마인더</label>
@@ -656,13 +707,15 @@
                 <option value="11">11월</option><option value="12">12월</option>
               </select>
             </div>
-            <div class="form-group fg-date">
-              <label style="text-align:center;">시작 일</label>
-              <input id="filterStart" type="date" readonly onclick="openDp('filterStart', filterList)" style="text-align:center;cursor:pointer;" />
-            </div>
-            <div class="form-group fg-date">
-              <label style="text-align:center;">종료 일</label>
-              <input id="filterEnd" type="date" readonly onclick="openDp('filterEnd', filterList)" style="text-align:center;cursor:pointer;" />
+            <div class="form-group" style="min-width:190px;">
+              <label style="text-align:center;">기간</label>
+              <button type="button" class="range-btn" id="btnFilterRange"
+                onclick="openRangePicker('filterStart','filterEnd','filterRangeLabel','btnFilterRange',filterList)"
+                style="font-size:12px;padding:7px 10px;">
+                <span id="filterRangeLabel">📅 날짜 선택</span>
+              </button>
+              <input id="filterStart" type="hidden" />
+              <input id="filterEnd" type="hidden" />
             </div>
             <div class="form-group fg-status">
               <label style="text-align:center;">상태</label>
@@ -763,6 +816,51 @@
 </div>
 
 
+<!-- Range Date Picker -->
+<div class="drp-overlay" id="drpOverlay" onclick="drpOverlayClick(event)">
+  <div class="drp-popup" onclick="event.stopPropagation()">
+    <div class="drp-header">
+      <div class="drp-header-info">
+        <div class="drp-slot" id="drpStartSlot">
+          <span class="drp-slot-lbl">📅 시작일</span>
+          <span class="drp-slot-val" id="drpStartVal">선택하세요</span>
+        </div>
+        <span class="drp-arrow">→</span>
+        <div class="drp-slot" id="drpEndSlot">
+          <span class="drp-slot-lbl">🏁 종료일</span>
+          <span class="drp-slot-val" id="drpEndVal">선택하세요</span>
+        </div>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="background:rgba(255,255,255,.2);color:#fff;border:none;" onclick="closeDrp()">✕</button>
+    </div>
+    <div class="drp-nav-row">
+      <button class="dp-nav-btn" onclick="drpPrev()">&#9664;</button>
+      <span class="drp-nav-title" id="drpNavTitle"></span>
+      <button class="dp-nav-btn" onclick="drpNext()">&#9654;</button>
+    </div>
+    <div class="dp-body">
+      <div class="dp-dow-row">
+        <div class="dp-dow-cell">일</div><div class="dp-dow-cell">월</div>
+        <div class="dp-dow-cell">화</div><div class="dp-dow-cell">수</div>
+        <div class="dp-dow-cell">목</div><div class="dp-dow-cell">금</div>
+        <div class="dp-dow-cell">토</div>
+      </div>
+      <div class="dp-day-grid" id="drpDayGrid"></div>
+    </div>
+    <div class="drp-hint" id="drpHint">📅 시작일을 클릭하세요</div>
+    <div class="dp-footer">
+      <div style="display:flex;gap:10px;align-items:center;">
+        <span class="dp-today-btn" onclick="drpGoToday()">오늘</span>
+        <span class="dp-today-btn" onclick="drpClear()">🗑️ 초기화</span>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="closeDrp()">취소</button>
+        <button class="btn btn-primary btn-sm" style="width:auto;" onclick="drpConfirm()">확인</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Custom Date Picker -->
 <div class="dp-overlay" id="dpOverlay" onclick="dpOverlayClick(event)">
   <div class="dp-popup" onclick="event.stopPropagation()">
@@ -797,6 +895,164 @@
 <div class="toast-wrap" id="toastWrap"></div>
 
 <script>
+
+
+/* ════════════════════════════════════════════
+   Range Date Picker (기간 한 팝업 선택) - 범용
+════════════════════════════════════════════ */
+let _drpYear = new Date().getFullYear();
+let _drpMonth = new Date().getMonth();
+let _drpStart = null;
+let _drpEnd   = null;
+let _drpStep  = 'start';
+let _drpHover = null;
+// 어느 입력을 대상으로 하는지 동적 관리
+let _drpStartId  = 'fStart';
+let _drpEndId    = 'fEnd';
+let _drpLabelId  = 'rangePickerLabel';
+let _drpBtnId    = 'btnRangePicker';
+let _drpCallback = null;
+
+/* openRangePicker(startId, endId, labelId, btnId, callback)
+   파라미터 없이 호출하면 폼 기본값 사용 */
+function openRangePicker(startId, endId, labelId, btnId, callback) {
+  _drpStartId  = startId  || 'fStart';
+  _drpEndId    = endId    || 'fEnd';
+  _drpLabelId  = labelId  || 'rangePickerLabel';
+  _drpBtnId    = btnId    || 'btnRangePicker';
+  _drpCallback = callback || null;
+
+  _drpStart = document.getElementById(_drpStartId).value || null;
+  _drpEnd   = document.getElementById(_drpEndId).value   || null;
+  _drpStep  = _drpStart ? 'end' : 'start';
+  const ref = _drpStart || todayStr();
+  const d = new Date(ref + 'T00:00:00');
+  _drpYear = d.getFullYear(); _drpMonth = d.getMonth();
+  _drpHover = null;
+  drpRender();
+  document.getElementById('drpOverlay').classList.add('open');
+
+  const grid = document.getElementById('drpDayGrid');
+  grid._drpOver = function(e) {
+    const el = e.target.closest('[data-date]');
+    if(!el) return;
+    const ds = el.dataset.date;
+    if(_drpStep !== 'end' || !_drpStart || ds === _drpHover) return;
+    _drpHover = ds;
+    drpUpdateClasses();
+  };
+  grid._drpClick = function(e) {
+    const el = e.target.closest('[data-date]');
+    if(!el) return;
+    drpClickDay(el.dataset.date);
+  };
+  grid.addEventListener('mouseover', grid._drpOver);
+  grid.addEventListener('click', grid._drpClick);
+}
+
+function closeDrp() {
+  const grid = document.getElementById('drpDayGrid');
+  if(grid._drpOver)  { grid.removeEventListener('mouseover', grid._drpOver);  grid._drpOver=null; }
+  if(grid._drpClick) { grid.removeEventListener('click',     grid._drpClick); grid._drpClick=null; }
+  document.getElementById('drpOverlay').classList.remove('open');
+}
+function drpOverlayClick(e) { if(e.target===document.getElementById('drpOverlay')) closeDrp(); }
+function drpPrev() { _drpMonth--; if(_drpMonth<0){_drpMonth=11;_drpYear--;} drpRender(); }
+function drpNext() { _drpMonth++; if(_drpMonth>11){_drpMonth=0;_drpYear++;} drpRender(); }
+function drpClear() { _drpStart=null;_drpEnd=null;_drpStep='start';_drpHover=null; drpRender(); }
+function drpGoToday() {
+  const today=todayStr();
+  const now=new Date();
+  _drpYear=now.getFullYear(); _drpMonth=now.getMonth();
+  drpClickDay(today);
+}
+
+function drpConfirm() {
+  document.getElementById(_drpStartId).value = _drpStart || '';
+  document.getElementById(_drpEndId).value   = _drpEnd   || '';
+  updateRangeLabel(_drpStartId, _drpEndId, _drpLabelId, _drpBtnId);
+  if(_drpCallback) _drpCallback();
+  closeDrp();
+}
+
+function drpClickDay(ds) {
+  if(_drpStep === 'start') {
+    _drpStart=ds; _drpEnd=null; _drpStep='end'; _drpHover=null;
+  } else {
+    if(ds < _drpStart) { _drpStart=ds; _drpEnd=null; _drpStep='end'; _drpHover=null; }
+    else               { _drpEnd=ds;   _drpStep='start'; _drpHover=null; }
+  }
+  drpRender();
+}
+
+function drpUpdateClasses() {
+  const effEnd = (_drpStep==='end' && _drpHover && _drpStart && _drpHover >= _drpStart)
+    ? _drpHover : _drpEnd;
+  document.querySelectorAll('#drpDayGrid [data-date]').forEach(cell => {
+    const ds = cell.dataset.date;
+    cell.classList.remove('drp-in-range','drp-end');
+    if(effEnd) {
+      if(ds === effEnd && ds > _drpStart) cell.classList.add('drp-end');
+      if(ds > _drpStart && ds < effEnd)  cell.classList.add('drp-in-range');
+    }
+  });
+}
+
+function drpRender() {
+  document.getElementById('drpStartVal').textContent = _drpStart ? fmtDate(_drpStart) : '선택하세요';
+  document.getElementById('drpEndVal').textContent   = _drpEnd   ? fmtDate(_drpEnd)   : '선택하세요';
+  document.getElementById('drpStartSlot').style.opacity = _drpStep==='start' ? '1' : '0.75';
+  document.getElementById('drpEndSlot').style.opacity   = _drpStep==='end'   ? '1' : '0.75';
+  document.getElementById('drpHint').textContent = _drpStep==='start'
+    ? '📅 시작일을 클릭하세요' : '📅 종료일을 클릭하세요 (시작일 이후)';
+  document.getElementById('drpNavTitle').textContent = _drpYear+'년 '+(_drpMonth+1)+'월';
+  drpBuildGrid();
+}
+
+function drpBuildGrid() {
+  const y=_drpYear, m=_drpMonth;
+  const firstDow=new Date(y,m,1).getDay();
+  const dim=new Date(y,m+1,0).getDate();
+  const dipm=new Date(y,m,0).getDate();
+  const today=todayStr();
+  const effEnd=(_drpStep==='end'&&_drpHover&&_drpStart&&_drpHover>=_drpStart)?_drpHover:_drpEnd;
+  let html='';
+  for(let i=firstDow-1;i>=0;i--) html+=`<div class="dp-day other-m">${dipm-i}</div>`;
+  for(let d=1;d<=dim;d++) {
+    const ds=makeDateStr(y,m,d);
+    const dow=new Date(ds+'T00:00:00').getDay();
+    const hol=getHoliday(ds);
+    let cls='dp-day';
+    if(ds===today) cls+=' dp-today';
+    if(dow===0||hol) cls+=' dp-sunday'; else if(dow===6) cls+=' dp-saturday';
+    if(ds===_drpStart) cls+=' drp-start';
+    if(effEnd && ds===effEnd && ds>_drpStart) cls+=' drp-end';
+    if(_drpStart && effEnd && ds>_drpStart && ds<effEnd) cls+=' drp-in-range';
+    html+=`<div class="${cls}" data-date="${ds}">${d}</div>`;
+  }
+  const total=firstDow+dim;
+  const remain=total%7===0?0:7-(total%7);
+  for(let d=1;d<=remain;d++) html+=`<div class="dp-day other-m">${d}</div>`;
+  document.getElementById('drpDayGrid').innerHTML=html;
+}
+
+/* updateRangeLabel(startId, endId, labelId, btnId) - 범용 */
+function updateRangeLabel(startId, endId, labelId, btnId) {
+  startId = startId || 'fStart'; endId = endId || 'fEnd';
+  labelId = labelId || 'rangePickerLabel'; btnId = btnId || 'btnRangePicker';
+  const s=document.getElementById(startId).value;
+  const e=document.getElementById(endId).value;
+  const lbl=document.getElementById(labelId);
+  const btn=document.getElementById(btnId);
+  if(!lbl || !btn) return;
+  if(s||e){
+    lbl.textContent=(s?fmtDate(s):'?')+' ~ '+(e?fmtDate(e):'?');
+    btn.classList.add('has-value');
+  } else {
+    lbl.textContent = (labelId==='filterRangeLabel') ? '📅 날짜 선택' : '📅 날짜를 선택하세요';
+    btn.classList.remove('has-value');
+  }
+}
 
 /* ════════════════════════════════════════════
    Custom Date Picker
@@ -1151,6 +1407,7 @@ function resetForm(){
   document.getElementById("imgClearBtn").style.display="none";
   document.getElementById("formTitle").textContent="➕새 항목 추가";
   document.getElementById("btnSave").textContent="💾저장";
+  updateRangeLabel();
 }
 function fillForm(t){
   if(!t) return;
@@ -1169,6 +1426,7 @@ document.getElementById("fCategory").value = t.category || "";
   else{p.style.display="none";b.style.display="none";}
   document.getElementById("formTitle").textContent="📝 항목 수정";
   document.getElementById("btnSave").textContent="🔃 업데이트";
+  updateRangeLabel();
   document.getElementById("fTitle").focus();
   window.scrollTo({top:0,behavior:"smooth"});
 }
@@ -1237,6 +1495,7 @@ function resetFilter(){
   document.getElementById("filterMonth").value=now.getMonth()+1;
   document.getElementById("filterStart").value="";
   document.getElementById("filterEnd").value="";
+  updateRangeLabel("filterStart","filterEnd","filterRangeLabel","btnFilterRange");
   document.getElementById("filterStatus").value="all";
   document.getElementById("filterSort").value="asc";
 
@@ -1249,7 +1508,8 @@ function clearSelection(){selectedIds.clear();filterList();}
 async function bulkDone(){
   if(!selectedIds.size){toast("선택된 항목이 없습니다.");return;}
   const cnt=selectedIds.size;
-  for(const id of selectedIds){const t=tasks.find(x=>x.id===id);if(t){t.done=true;t.reminded=true;await idbPut(t);}}
+  const today=todayStr();
+  for(const id of selectedIds){const t=tasks.find(x=>x.id===id);if(t){t.done=true;t.reminded=true;t.endDate=today;t.completedAt=today;await idbPut(t);}}
   clearSelection();await refresh();toast(cnt+"개 항목 완료 처리되었습니다.");
 }
 async function bulkDelete(){
@@ -1319,7 +1579,12 @@ function toggleSelect(id,checked){
 }
 async function toggleDone(id,checked){
   const t=tasks.find(x=>x.id===id); if(!t) return;
-  t.done=checked; if(checked) t.reminded=true;
+  t.done=checked;
+  if(checked){
+    t.reminded=true;
+    t.endDate=todayStr();
+    t.completedAt=todayStr();
+  }
   await idbPut(t); await refresh();
 }
 async function deleteOne(id){
@@ -1492,7 +1757,8 @@ function addTaskForSel() {
   resetForm();
   document.getElementById("fStart").value = calSelStart;
   document.getElementById("fEnd").value   = end;
-document.getElementById("fCategory").value = "";
+  document.getElementById("fCategory").value = "";
+  updateRangeLabel();
   setView("list");
   window.scrollTo({top:0, behavior:"smooth"});
   document.getElementById("fTitle").focus();
@@ -1673,6 +1939,7 @@ function openAddFromDay(){
   if(dayModalDate){
     document.getElementById("fStart").value=dayModalDate;
     document.getElementById("fEnd").value=dayModalDate;
+    updateRangeLabel();
   }
   window.scrollTo({top:0,behavior:"smooth"});
   document.getElementById("fTitle").focus();
