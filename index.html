@@ -640,7 +640,7 @@
         <div class="form-group">
           <label>📅 기간 설정 (시작 ~ 종료)</label>
           <button type="button" class="range-btn" id="btnRangePicker" onclick="openRangePicker()">
-            <span id="rangePickerLabel">📅 날짜를 선택하세요</span>
+            <span id="rangePickerLabel"> 날짜를 선택하세요</span>
           </button>
           <input id="fStart" type="hidden" />
           <input id="fEnd" type="hidden" />
@@ -709,11 +709,11 @@
 
           <div class="filter-bar">
             <div class="form-group fg-year">
-              <label style="text-align:center;">년도</label>
+              <label style="text-align:center;">☀️년도</label>
               <select id="filterYear" onchange="filterList()" style="text-align:center;"></select>
             </div>
             <div class="form-group fg-month">
-              <label style="text-align:center;">월</label>
+              <label style="text-align:center;">🌕 월</label>f
               <select id="filterMonth" onchange="filterList()" style="text-align:center;">
                 <option value="0">전체</option>
                 <option value="1">1월</option><option value="2">2월</option>
@@ -725,22 +725,22 @@
               </select>
             </div>
             <div class="form-group" style="min-width:190px;">
-              <label style="text-align:center;">기간</label>
+              <label style="text-align:center;">📅기간</label>
               <button type="button" class="range-btn" id="btnFilterRange"
                 onclick="openRangePicker('filterStart','filterEnd','filterRangeLabel','btnFilterRange',filterList)"
                 style="font-size:12px;padding:7px 10px;">
-                <span id="filterRangeLabel" style="display:block; text-align:center;">📅 날짜를 선택하세요</span>
+                <span id="filterRangeLabel" style="display:block; text-align:center;">날짜를 선택하세요</span>
 
               </button>
               <input id="filterStart" type="hidden" />
               <input id="filterEnd" type="hidden" />
             </div>
             <div class="form-group fg-status">
-              <label style="text-align:center;">상태</label>
+              <label style="text-align:center;">🔲상태</label>
               <select id="filterStatus" onchange="filterList()" style="text-align:center;">
-                <option value="all">전체</option>
-                <option value="todo" selected>미완료</option>
-                <option value="done">완료</option>
+                <option value="all">🟦전체</option>
+                <option value="todo" selected>🟥미완료</option>
+                <option value="done">🟩완료</option>
               </select>
             </div>
             <button class="btn btn-ghost btn-sm" style="margin-top:8px; margin-left:auto; display:block;" onclick="resetFilter()">초기화</button>
