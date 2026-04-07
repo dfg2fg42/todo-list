@@ -709,11 +709,11 @@
 
           <div class="filter-bar">
             <div class="form-group fg-year">
-              <label style="text-align:center;">☀️년도</label>
+              <label style="text-align:center;">☀️ [년]</label>
               <select id="filterYear" onchange="filterList()" style="text-align:center;"></select>
             </div>
             <div class="form-group fg-month">
-              <label style="text-align:center;">🌕 월</label>
+              <label style="text-align:center;">🌕 [월]</label>
               <select id="filterMonth" onchange="filterList()" style="text-align:center;">
                 <option value="0">전체</option>
                 <option value="1">1월</option><option value="2">2월</option>
@@ -725,7 +725,7 @@
               </select>
             </div>
             <div class="form-group" style="min-width:190px;">
-              <label style="text-align:center;">📅기간</label>
+              <label style="text-align:center;">📅 [기간]</label>
               <button type="button" class="range-btn" id="btnFilterRange"
                 onclick="openRangePicker('filterStart','filterEnd','filterRangeLabel','btnFilterRange',filterList)"
                 style="font-size:12px;padding:7px 10px;">
@@ -736,7 +736,7 @@
               <input id="filterEnd" type="hidden" />
             </div>
             <div class="form-group fg-status">
-              <label style="text-align:center;">🔲상태</label>
+              <label style="text-align:center;">🔲 [상태]</label>
               <select id="filterStatus" onchange="filterList()" style="text-align:center;">
                 <option value="all">🟦전체</option>
                 <option value="todo" selected>🟥미완료</option>
@@ -2080,8 +2080,14 @@ async function refresh(){
   buildYearSelect();
   const now=new Date();
   document.getElementById("filterMonth").value=now.getMonth()+1;
-  document.getElementById("todayLabel").textContent =
-  "🕰️ " + now.getFullYear() + "년 " + (now.getMonth()+1) + "월 " + now.getDate() + "일";
+const _dow = ["일","월","화","수","목","금","토"];
+const _dayName = _dow[now.getDay()];
+const _dayColor = now.getDay() === 0 ? "#e53e3e"    // 일요일 빨간색
+                : now.getDay() === 6 ? "#4361ee"    // 토요일 파란색
+                : "#1a202c";                        // 평일 검은색
+document.getElementById("todayLabel").innerHTML =
+  "🕰️ " + now.getFullYear() + "년 " + (now.getMonth()+1) + "월 " + now.getDate() + "일"
+  + " <span style=\"color:" + _dayColor + ";font-weight:800;\">(" + _dayName + ")</span>";
   updateNotiBanner();
   await refresh();
   setInterval(async()=>{await refresh();checkReminders();},30000);
