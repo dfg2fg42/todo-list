@@ -6,11 +6,7 @@
   <title>To-Do List</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    /* ═══════════════════════════════════════
-     🎨 전역 CSS 변수 (테마 색상/크기 설정)
-     색상/크기 변경 시 여기만 수정하면 전체 반영됩니다.
-     ═══════════════════════════════════════ */
-  :root {
+    :root {
       --bg: #f0f4f8;
       --surface: #ffffff;
       --surface2: #f8fafc;
@@ -25,7 +21,6 @@
       --shadow: 0 1px 4px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06);
       --radius: 14px;
     }
-    /* ─ 기본 body 스타일 (배경, 폰트, 여백) ─ */
     body {
       background: var(--bg);
       color: var(--text);
@@ -35,7 +30,6 @@
       word-break: keep-all;
     }
 
-    /* ─ 전체 앱 레이아웃 래퍼 (최대 폭 제한) ─ */
     .app-wrap { max-width: 1400px; margin: 0 auto; }
     .app-header {
       display: flex; align-items: center; justify-content: space-between;
@@ -58,7 +52,6 @@
   font-size: 15px;}
 
 
-    /* ─ 좌/우 2단 그리드 레이아웃 (좌: 폼, 우: 목록/달력) ─ */
     .main-grid {
       display: grid;
       grid-template-columns: 320px 1fr;
@@ -66,7 +59,6 @@
       align-items: start;
     }
 
-    /* ─ 카드 컴포넌트 (폼·목록 영역 흰 박스) ─ */
     .card {
       background: var(--surface); border-radius: var(--radius);
       box-shadow: var(--shadow); padding: 24px; border: 1px solid var(--border);
@@ -77,7 +69,6 @@
       margin-bottom: 18px; display: flex; align-items: center; gap: 7px;
     }
 
-    /* ─ 폼 입력 그룹 (라벨 + 인풋 세트) ─ */
     .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
     .form-group label { font-size: 12px; font-weight: 600; color: var(--text-muted); }
     .form-group input,
@@ -93,7 +84,6 @@
     .form-group textarea { resize: vertical; min-height: 100px; }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-    /* ─ 공통 버튼 스타일 (기본형) ─ */
     .btn {
       display: inline-flex; align-items: center; justify-content: center; gap: 6px;
       padding: 9px 18px; border-radius: 9px; font-size: 13px; font-weight: 600;
@@ -109,7 +99,6 @@
     .btn-success { background: var(--success); color: #fff; }
     .btn-sm { padding: 5px 11px; font-size: 12px; border-radius: 7px; }
 
-    /* ─ 알림 권한 상태 배너 (info/warn/ok 3가지 타입) ─ */
     .noti-banner {
       display: flex; align-items: center;
       background: #ebf8ff; border: 1px solid #bee3f8; border-radius: 9px;
@@ -118,7 +107,7 @@
     .noti-banner.warn { background: #fffbeb; border-color: #fbd38d; color: #744210; }
     .noti-banner.ok   { background: #f0fff4; border-color: #9ae6b4; color: #276749; }
 
-    /* ─ 필터 바: 년/월/기간/상태 필터 영역 ─ */
+    /* ── Filter Bar ── */
     .filter-bar {
       display: flex; gap: 8px; align-items: end; flex-wrap: wrap;
       margin-bottom: 14px;
@@ -131,7 +120,7 @@
     .fg-date   { width: 160px; }
     .fg-status { width: 100px; }
 
-    /* ─ 통계 박스: 전체/완료/미완료 카운트 표시 ─ */
+    /* ── Stats ── */
     .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 18px; }
     .stat-box {
       background: var(--surface2); border-radius: 10px;
@@ -140,7 +129,7 @@
     .stat-box .val { font-size: 26px; font-weight: 800; color: var(--accent); }
     .stat-box .lbl { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
 
-    /* ─ 뷰 전환 토글: 목록↔달력 전환 버튼 ─ */
+    /* ── View toggle row ── */
     .view-row {
       display: flex; align-items: center; justify-content: space-between;
       margin-bottom: 16px;
@@ -171,7 +160,7 @@
     }
     .sort-select-wrap select:focus { border-color: var(--accent); }
 
-    /* ─ 일괄 처리 바: 체크된 항목 일괄 완료/삭제 ─ */
+    /* ── Bulk Bar ── */
     .bulk-bar {
       display: flex; gap: 6px; align-items: center;
       background: #eef2ff; border-radius: 9px;
@@ -180,7 +169,7 @@
     }
     .bulk-bar span { flex: 1; }
 
-    /* ─ 작업(To-Do) 카드 목록 스타일 ─ */
+    /* ── Task list ── */
     .task-list { display: flex; flex-direction: column; gap: 10px; }
     .task-card {
       background: var(--surface); border-radius: 12px; border: 1.5px solid var(--border);
@@ -217,7 +206,7 @@
     .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); font-size: 15px; }
     .empty-state svg { opacity: 0.2; display: block; margin: 0 auto 16px; }
 
-    /* ─ 라이트박스: 이미지 클릭 시 전체 화면 보기 ─ */
+    /* ── Lightbox ── */
     .lightbox {
       display: none; position: fixed; inset: 0;
       background: rgba(0,0,0,.75); z-index: 9999; align-items: center; justify-content: center;
@@ -226,7 +215,7 @@
     .lightbox img { max-width: 90vw; max-height: 90vh; border-radius: 12px; }
     .lightbox-close { position: absolute; top: 20px; right: 24px; color: #fff; font-size: 32px; cursor: pointer; line-height: 1; }
 
-    /* ─ 이미지 미리보기 (폼 하단 썸네일 + 삭제 버튼) ─ */
+    /* ── Image preview ── */
     .img-preview-wrap { position: relative; display: inline-block; }
     .img-preview { width: 80px; height: 80px; object-fit: cover; border-radius: 9px; border: 1px solid var(--border); display: none; }
     .img-clear {
@@ -235,7 +224,7 @@
       cursor: pointer; display: none; align-items: center; justify-content: center;
     }
 
-    /* ─ Toast 알림 메시지 (우하단 팝업) ─ */
+    /* ── Toast ── */
     .toast-wrap { position: fixed; bottom: 32px; right: 32px; display: flex; flex-direction: column; gap: 10px; z-index: 9998; }
     .toast {
       background: #1a202c; color: #fff; padding: 12px 20px; border-radius: 10px;
@@ -244,7 +233,7 @@
     }
     @keyframes fadeSlide { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: none; } }
 
-    /* ─ 백업/복원 버튼 영역 스타일 ─ */
+    /* ── Backup / Restore ── */
     .backup-bar {
       display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
       padding: 10px 14px; background: #f0fdf4;
@@ -278,7 +267,7 @@
     .dot-done { background: #bbf7d0; }
     .dot-over { background: #fecaca; }
 
-    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
     .cal-dow {
       text-align: center; font-size: 11px; font-weight: 700; color: var(--text-muted);
       padding: 6px 0; border-bottom: 1px solid var(--border); margin-bottom: 2px;
@@ -287,9 +276,10 @@
     .cal-dow.dow-sat { color: var(--accent); }
 
     .cal-cell {
-      min-height: 110px; border-radius: 8px; border: 1px solid var(--border);
+      min-height: 110px; border-radius: 4px; border: 1px solid var(--border);
       padding: 5px 4px 4px; background: var(--surface2);
       cursor: pointer; transition: border-color .16s, background .16s; overflow: hidden;
+      margin: 0 -0.5px;
     }
     .cal-cell:hover { border-color: var(--accent); background: #f5f7ff; }
     .cal-cell.other-month { opacity: 0.35; pointer-events: none; }
@@ -304,39 +294,22 @@
     .cal-cell.dow-sun .cal-day-num { color: #e53e3e; }
     .cal-cell.dow-sat .cal-day-num { color: var(--accent); }
 
-.cal-task-chip {
-  font-size: 11px; font-weight: 600; padding: 2px 5px; border-radius: 0px;
-  margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  display: block; cursor: pointer; transition: opacity .14s;
-}
-/* 기간 시작일: 왼쪽만 둥글게 */
-.cal-task-chip.chip-start {
-  border-radius: 6px 0 0 6px;
-  margin-right: -4px;
-}
-/* 기간 종료일: 오른쪽만 둥글게 */
-.cal-task-chip.chip-end {
-  border-radius: 0 6px 6px 0;
-  margin-left: -4px;
-}
-/* 시작=종료(하루짜리): 양쪽 둥글게 */
-.cal-task-chip.chip-single {
-  border-radius: 6px;
-}
-/* 중간 날짜: 텍스트 숨김 (바만 표시) */
-.cal-task-chip.chip-mid {
-  color: transparent !important;
-  border-radius: 0;
-  margin-left: -4px;
-  margin-right: -4px;
-}
-
-
-    .cal-task-chip:hover { opacity: 0.75; }
+    .cal-task-chip {
+      font-size: 11px; font-weight: 600; padding: 2px 5px; border-radius: 0;
+      margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      display: block; cursor: pointer; transition: opacity .14s;
+    }
+    .cal-task-chip.chip-single { border-radius: 5px; }
+    .cal-task-chip.chip-start  { border-radius: 5px 0 0 5px; margin-right: -5px; padding-right: 0; position: relative; z-index: 1; }
+    .cal-task-chip.chip-mid    { border-radius: 0; margin-left: -5px; margin-right: -5px; padding-left: 0; padding-right: 0; position: relative; z-index: 1; }
+    .cal-task-chip.chip-end    { border-radius: 0 5px 5px 0; margin-left: -5px; padding-left: 0; position: relative; z-index: 1; }
+    .chip-hide-title { color: transparent !important; }
+    .cal-task-chip.chip-hover  { filter: brightness(0.82); outline: 2px solid rgba(0,0,0,0.18); outline-offset: -1px; z-index: 10; }
     .chip-todo { background: #dbeafe; color: #1e40af; }
     .chip-done { background: #dcfce7; color: #166534; }
     .chip-over { background: #fee2e2; color: #991b1b; }
     .cal-more { font-size: 10px; color: var(--text-muted); font-weight: 600; margin-top: 2px; }
+    .cal-cell-header { height: 16px; overflow: hidden; margin-bottom: 2px; }
 
     /* ── 공휴일 ── */
     .cal-holiday {
@@ -364,7 +337,30 @@
     }
     .shift-ju  { background: #22c55e; color: #fff; }
     .shift-hyu { background: #ffffff; color: #e53e3e; border: 1px solid #e53e3e; }
-    .shift-ya  { background: #111111; color: #ffffff; }
+    .shift-ya   { background: #111111; color: #ffffff; }
+    .shift-dae  { background: #f97316; color: #fff; }
+    .shift-yeon { background: #8b5cf6; color: #fff; }
+    .shift-badge { cursor: pointer; }
+    .shift-badge.shift-override { outline: 2px solid #f59e0b; outline-offset: 1px; }
+    .shift-popup-overlay { display:none; position:fixed; inset:0; z-index:9000; }
+    .shift-popup-overlay.open { display:block; }
+    .shift-popup {
+      position:fixed; background:var(--surface); border-radius:12px;
+      box-shadow:0 8px 32px rgba(0,0,0,.22); padding:14px 16px;
+      min-width:200px; z-index:9001; border:1.5px solid var(--border);
+    }
+    .shift-popup-title { font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:10px; padding-bottom:7px; border-bottom:1px solid var(--border); }
+    .shift-popup-btns { display:flex; flex-direction:column; gap:6px; }
+    .shift-popup-btn {
+      display:flex; align-items:center; gap:8px; padding:7px 10px;
+      border-radius:8px; border:1.5px solid var(--border);
+      background:var(--surface2); cursor:pointer; font-size:13px;
+      font-weight:600; font-family:inherit; transition:all .14s; text-align:left;
+    }
+    .shift-popup-btn:hover { border-color:var(--accent); background:#eef2ff; }
+    .shift-popup-btn.active { border-color:var(--accent); background:#eef2ff; color:var(--accent); }
+    .shift-popup-reset { margin-top:8px; padding-top:8px; border-top:1px solid var(--border); font-size:11px; color:var(--danger); cursor:pointer; font-weight:600; text-align:center; }
+    .shift-popup-reset:hover { text-decoration:underline; }
 
     .cal-part-row {
       display: flex; align-items: center; gap: 10px;
@@ -553,13 +549,12 @@
     .day-modal-empty { text-align: center; color: var(--text-muted); font-size: 14px; padding: 24px 0; }
     .day-modal-add { width: 100%; margin-top: 12px; }
 
-/* ─ 카테고리 배지 색상 (기동/정지·정비·안전·기타) ─ */
+/* ── 카테고리 ── */
 .badge-cat-1 { background: #dbeafe; color: #1d4ed8; }  /* 기동/정지 */
 .badge-cat-2 { background: #dcfce7; color: #15803d; }  /* 정비 */
 .badge-cat-3 { background: #fef9c3; color: #a16207; }  /* 안전 및 훈련 */
 .badge-cat-4 { background: #f3e8ff; color: #7e22ce; }  /* 기타 */
 
-/* ─ 카테고리 필터 버튼 그룹 ─ */
 .cat-filter-wrap { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
 .cat-filter-btn {
   padding: 5px 12px; border-radius: 999px; font-size: 12px;
@@ -641,10 +636,6 @@
 <body>
 <div class="app-wrap">
 
-  <!-- ══════════════════════════════════════
-       📌 앱 헤더: 제목, 날짜, 백업/복원 버튼
-       - 앱 이름(h1), 오늘 날짜(subtitle) 표시
-       ══════════════════════════════════════ -->
   <!-- Header -->
 <div class="app-header">
   <div>
@@ -662,19 +653,9 @@
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════
-       📐 메인 2단 그리드 레이아웃
-       - LEFT: 할 일 입력 폼
-       - RIGHT: 목록 + 달력 뷰
-       ══════════════════════════════════════ -->
   <div class="main-grid">
 
-    <!-- ──────────────────────────────────
-         📝 LEFT 패널: 할 일 추가/수정 폼
-         - 제목, 카테고리, 메모 입력
-         - 기간(시작~종료), 리마인더, 이미지 첨부
-         - 저장/초기화 버튼
-         ────────────────────────────────── -->
+    <!-- LEFT: Form -->
     <div>
       <div class="card">
         <div class="card-title">
@@ -734,7 +715,7 @@
     <div>
       <div class="card">
 
-        <!-- ── 통계 박스: 클릭하면 해당 상태로 필터됨 ── -->
+        <!-- Stats -->
         <div class="stats-row">
           <div class="stat-box" id="statBoxAll" onclick="statClickAll()">
             <div class="val" id="statTotal">0</div>
@@ -753,7 +734,7 @@
           </div>
         </div>
 
-        <!-- ── 뷰 전환(목록/달력) 및 정렬 방향 선택 ── -->
+        <!-- View toggle + 정렬 -->
         <div class="view-row">
           <div class="view-toggle">
             <button id="btnListView" class="active" onclick="setView('list')">🗒️목록</button>
@@ -768,13 +749,7 @@
           </div>
         </div>
 
-        <!-- ══════════════════════════════
-             🗒️ 목록 뷰 섹션
-             - 필터바(년/월/기간/상태)
-             - 일괄처리바(전체선택/완료/삭제)
-             - 카테고리 필터 버튼
-             - 실제 할 일 카드 목록(#taskList)
-             ══════════════════════════════ -->
+        <!-- LIST SECTION -->
         <div id="listSection" class="panel-section">
 
           <div class="filter-bar">
@@ -835,12 +810,7 @@
           <div class="task-list" id="taskList"></div>
         </div>
 
-        <!-- ══════════════════════════════
-             🗓️ 달력 뷰 섹션
-             - 월 이전/다음 이동, 오늘/날짜선택
-             - 파트 선택 (교대근무 스케줄 표시)
-             - 공휴일, 할 일 칩 표시
-             ══════════════════════════════ -->
+        <!-- CALENDAR SECTION -->
         <div id="calSection" class="panel-section hidden">
           <div class="cal-header">
             <button class="btn btn-ghost btn-sm" onclick="prevMonth()">&#9664; 이전</button>
@@ -875,6 +845,8 @@
               <div class="shift-legend-item"><span class="shift-badge shift-ju">주</span> 주간근무</div>
               <div class="shift-legend-item"><span class="shift-badge shift-ya">야</span> 야간근무</div>
               <div class="shift-legend-item"><span class="shift-badge shift-hyu">휴</span> 휴무</div>
+              <div class="shift-legend-item"><span class="shift-badge shift-dae">대</span> 대근</div>
+              <div class="shift-legend-item"><span class="shift-badge shift-yeon">연</span> 연장</div>
             </div>
           </div>
           <div class="cal-legend">
@@ -890,14 +862,19 @@
   </div>
 </div>
 
-<!-- ══ 이미지 라이트박스 (이미지 클릭 시 전체화면 표시) ══ -->
+<!-- ══ 근무 변경 팝업 ══ -->
+<div class="shift-popup-overlay" id="shiftPopupOverlay" onclick="closeShiftPopup()"></div>
+<div class="shift-popup" id="shiftPopup" style="display:none;">
+  <div class="shift-popup-title" id="shiftPopupTitle">근무 변경</div>
+  <div class="shift-popup-btns" id="shiftPopupBtns"></div>
+  <div class="shift-popup-reset" onclick="resetShiftOverride()">↩ 원래 근무로 되돌리기</div>
+</div>
 <!-- Lightbox -->
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
   <span class="lightbox-close">&#10005;</span>
   <img id="lightboxImg" src="" alt="" onclick="event.stopPropagation()" />
 </div>
 
-<!-- ══ 날짜 클릭 모달: 해당 날짜의 할 일 목록 + 빠른 추가/수정/삭제 ══ -->
 <!-- Day Modal -->
 <div class="day-modal-overlay" id="dayModalOverlay" onclick="closeDayModal()">
   <div class="day-modal" onclick="event.stopPropagation()">
@@ -911,7 +888,6 @@
 </div>
 
 
-<!-- ══ 기간 선택 달력 팝업 (시작일 ~ 종료일 드래그 선택) ══ -->
 <!-- Range Date Picker -->
 <div class="drp-overlay" id="drpOverlay" onclick="drpOverlayClick(event)">
   <div class="drp-popup" onclick="event.stopPropagation()">
@@ -957,7 +933,6 @@
   </div>
 </div>
 
-<!-- ══ 단일 날짜 선택 달력 팝업 (리마인더 날짜 등 단건 선택) ══ -->
 <!-- Custom Date Picker -->
 <div class="dp-overlay" id="dpOverlay" onclick="dpOverlayClick(event)">
   <div class="dp-popup" onclick="event.stopPropagation()">
@@ -988,7 +963,6 @@
   </div>
 </div>
 
-<!-- ══ Toast 메시지 컨테이너 (저장/삭제 등 알림 메시지) ══ -->
 <!-- Toast -->
 <div class="toast-wrap" id="toastWrap"></div>
 
@@ -998,14 +972,6 @@
 /* ════════════════════════════════════════════
    Range Date Picker (기간 한 팝업 선택) - 범용
 ════════════════════════════════════════════ */
-/* ─────────────────────────────────────────
-   기간 선택 팝업(RangeDatePicker) 전역 상태 변수
-   _drpYear/_drpMonth : 현재 표시 중인 년/월
-   _drpStart/_drpEnd  : 선택된 시작/종료일 (YYYY-MM-DD)
-   _drpStep           : 'start' → 시작일 선택 중 / 'end' → 종료일 선택 중
-   _drpHover          : 마우스오버 중인 날짜 (범위 미리보기용)
-   _drpStartId 등     : 어느 input을 업데이트할지 동적으로 지정
-───────────────────────────────────────── */
 let _drpYear = new Date().getFullYear();
 let _drpMonth = new Date().getMonth();
 let _drpStart = null;
@@ -1021,14 +987,6 @@ let _drpCallback = null;
 
 /* openRangePicker(startId, endId, labelId, btnId, callback)
    파라미터 없이 호출하면 폼 기본값 사용 */
-/**
- * openRangePicker - 기간 선택 팝업 열기
- * @param {string} startId   - 시작일 hidden input의 id
- * @param {string} endId     - 종료일 hidden input의 id
- * @param {string} labelId   - 선택 결과 표시할 span의 id
- * @param {string} btnId     - 버튼 id (has-value 클래스 토글용)
- * @param {function} callback - 날짜 확정 후 실행할 콜백 함수
- */
 function openRangePicker(startId, endId, labelId, btnId, callback) {
   _drpStartId  = startId  || 'fStart';
   _drpEndId    = endId    || 'fEnd';
@@ -1064,7 +1022,6 @@ function openRangePicker(startId, endId, labelId, btnId, callback) {
   grid.addEventListener('click', grid._drpClick);
 }
 
-/* 기간 선택 팝업 닫기 + 이벤트 리스너 정리 */
 function closeDrp() {
   const grid = document.getElementById('drpDayGrid');
   if(grid._drpOver)  { grid.removeEventListener('mouseover', grid._drpOver);  grid._drpOver=null; }
@@ -1082,7 +1039,6 @@ function drpGoToday() {
   drpClickDay(today);
 }
 
-/* 기간 선택 확정: 선택된 시작/종료일을 hidden input에 저장하고 팝업 닫기 */
 function drpConfirm() {
   document.getElementById(_drpStartId).value = _drpStart || '';
   document.getElementById(_drpEndId).value   = _drpEnd   || '';
@@ -1091,7 +1047,6 @@ function drpConfirm() {
   closeDrp();
 }
 
-/* 날짜 셀 클릭 처리: step에 따라 시작일/종료일 설정 */
 function drpClickDay(ds) {
   if(_drpStep === 'start') {
     _drpStart=ds; _drpEnd=null; _drpStep='end'; _drpHover=null;
@@ -1153,11 +1108,7 @@ function drpBuildGrid() {
   document.getElementById('drpDayGrid').innerHTML=html;
 }
 
-/**
- * updateRangeLabel - 기간 선택 버튼 텍스트 업데이트
- * 선택된 날짜가 있으면 '2026-01-01 ~ 2026-01-31' 형식으로 표시
- * 없으면 기본 안내 문구로 초기화
- */
+/* updateRangeLabel(startId, endId, labelId, btnId) - 범용 */
 function updateRangeLabel(startId, endId, labelId, btnId) {
   startId = startId || 'fStart'; endId = endId || 'fEnd';
   labelId = labelId || 'rangePickerLabel'; btnId = btnId || 'btnRangePicker';
@@ -1178,13 +1129,6 @@ function updateRangeLabel(startId, endId, labelId, btnId) {
 /* ════════════════════════════════════════════
    Custom Date Picker
 ════════════════════════════════════════════ */
-/* ─────────────────────────────────────────
-   단일 날짜 선택 팝업(CustomDatePicker) 전역 상태 변수
-   _dpTargetId  : 선택 결과를 반영할 input의 id
-   _dpSelected  : 현재 선택된 날짜 (YYYY-MM-DD)
-   _dpView      : 현재 보기 모드 ('day'|'month'|'year')
-   _dpCallback  : 날짜 선택 완료 시 실행할 콜백
-───────────────────────────────────────── */
 let _dpTargetId = null;
 let _dpYear = new Date().getFullYear();
 let _dpMonth = new Date().getMonth();
@@ -1192,11 +1136,6 @@ let _dpSelected = null; // "YYYY-MM-DD"
 let _dpView = 'day';    // 'day' | 'month' | 'year'
 let _dpCallback = null; // 선택 후 콜백
 
-/**
- * openDp - 단일 날짜 선택 팝업 열기
- * @param {string} inputId   - 날짜를 반영할 input의 id
- * @param {function} callback - 날짜 확정 후 콜백
- */
 function openDp(inputId, callback) {
   _dpTargetId = inputId;
   _dpCallback = callback || null;
@@ -1397,13 +1336,69 @@ function dpSelectYear(y) {
   dpRender();
 }
 
-/* ─────────────────────────────────────────
-   💾 데이터 저장소 (localStorage 사용)
-   LS_KEY : 저장 키 이름 (변경 시 기존 데이터 초기화됨)
-   lsLoad : 전체 할 일 배열 불러오기
-   lsSave : 전체 할 일 배열 저장
-   idbAll/idbPut/idbDel : CRUD 래퍼 함수
-───────────────────────────────────────── */
+const SHIFT_OV_KEY = 'shiftOverridesv1';
+let shiftOverrides = JSON.parse(localStorage.getItem(SHIFT_OV_KEY) || '{}');
+function saveShiftOverrides() { localStorage.setItem(SHIFT_OV_KEY, JSON.stringify(shiftOverrides)); }
+
+let _shiftPopupDs = null, _shiftPopupPart = null;
+
+function openShiftPopup(e, ds, part, currentShift) {
+  _shiftPopupDs = ds; _shiftPopupPart = part;
+  const pop = document.getElementById('shiftPopup');
+  const overlay = document.getElementById('shiftPopupOverlay');
+  const dateObj = new Date(ds + 'T00:00:00');
+  document.getElementById('shiftPopupTitle').textContent = (dateObj.getMonth()+1) + '월 ' + dateObj.getDate() + '일 근무 변경';
+  const btns = document.getElementById('shiftPopupBtns');
+  const opts = [
+    {val:'주',   label:'주간근무', cls:'shift-ju'},
+    {val:'야',   label:'야간근무', cls:'shift-ya'},
+    {val:'휴',   label:'휴무',     cls:'shift-hyu'},
+    {val:'대근', label:'대근 (대타)', cls:'shift-dae'},
+    {val:'연장', label:'연장근무', cls:'shift-yeon'},
+  ];
+  btns.innerHTML = '';
+  opts.forEach(o => {
+    const btn = document.createElement('button');
+    btn.className = 'shift-popup-btn' + (o.val === currentShift ? ' active' : '');
+    btn.innerHTML = '<span class="shift-badge ' + o.cls + '">' + o.val.charAt(0) + '</span>' + o.label;
+    btn.onclick = () => applyShiftChange(o.val);
+    btns.appendChild(btn);
+  });
+  const rect = e.target.getBoundingClientRect();
+  pop.style.top = (rect.bottom + 6) + 'px';
+  pop.style.left = Math.min(rect.left, window.innerWidth - 220) + 'px';
+  pop.style.display = 'block';
+  overlay.classList.add('open');
+}
+
+function closeShiftPopup() {
+  document.getElementById('shiftPopup').style.display = 'none';
+  document.getElementById('shiftPopupOverlay').classList.remove('open');
+  _shiftPopupDs = null; _shiftPopupPart = null;
+}
+
+function applyShiftChange(newShift) {
+  if(!_shiftPopupDs || !_shiftPopupPart) return;
+  const key = _shiftPopupDs + '_' + _shiftPopupPart;
+  const baseShift = getShiftForDate(_shiftPopupDs, _shiftPopupPart);
+  if(newShift === baseShift) { delete shiftOverrides[key]; }
+  else { shiftOverrides[key] = newShift; }
+  saveShiftOverrides();
+  closeShiftPopup();
+  renderCalendar();
+  toast('근무가 ' + newShift + '(으)로 변경되었습니다.');
+}
+
+function resetShiftOverride() {
+  if(!_shiftPopupDs || !_shiftPopupPart) return;
+  const key = _shiftPopupDs + '_' + _shiftPopupPart;
+  delete shiftOverrides[key];
+  saveShiftOverrides();
+  closeShiftPopup();
+  renderCalendar();
+  toast('원래 근무로 되돌렸습니다.');
+}
+
 const LS_KEY = "todo_app_ls_v1";
 
 function lsLoad() {
@@ -1423,27 +1418,15 @@ async function idbPut(t) {
 }
 async function idbDel(id) { lsSave(lsLoad().filter(x=>x.id!==id)); }
 
-/* ─────────────────────────────────────────
-   📦 앱 전역 상태 변수
-   tasks              : 할 일 배열 (메모리 캐시)
-   selectedIds        : 일괄처리용 선택된 id Set
-   editingId          : 현재 수정 중인 항목 id (null이면 새 추가)
-   currentImageDataUrl: 폼에 첨부된 이미지 base64
-   imageCleared       : 수정 시 이미지 삭제 여부 플래그
-   currentView        : 현재 뷰 ('list' | 'calendar')
-   calYear/calMonth   : 달력 현재 년/월
-───────────────────────────────────────── */
 let tasks=[], selectedIds=new Set(), editingId=null, currentImageDataUrl=null, imageCleared=false;
 let currentView='list', calYear=new Date().getFullYear(), calMonth=new Date().getMonth(), dayModalDate=null;
 
-/* toast(msg, dur) - 우하단 토스트 메시지 표시 (dur ms 후 자동 사라짐) */
 function toast(msg,dur=2800){
   const w=document.getElementById("toastWrap");
   const el=document.createElement("div"); el.className="toast"; el.textContent=msg;
   w.appendChild(el); setTimeout(()=>el.remove(),dur);
 }
 
-/* requestNoti() - 브라우저 알림 권한 요청 */
 async function requestNoti(){
   if(!("Notification" in window)){toast("이 브라우저는 알림을 지원하지 않습니다.");return;}
   const r=await Notification.requestPermission();
@@ -1462,7 +1445,6 @@ function updateNotiBanner(){
     b.className="noti-banner";b.textContent="리마인더 알림을 받으려면 [알림 권한 요청] 버튼을 클릭하세요.";b.style.display="";
   }
 }
-/* checkReminders() - 30초마다 실행: 리마인더 시각 도달 시 브라우저 알림 발송 */
 function checkReminders(){
   if(!("Notification" in window)||Notification.permission!=="granted") return;
   const now=Date.now();
@@ -1475,7 +1457,6 @@ function checkReminders(){
   });
 }
 
-/* onImageChange(input) - 이미지 파일 선택 시 Canvas로 리사이즈(max 800px) 후 base64 저장 */
 function onImageChange(input){
   const f=input.files&&input.files[0]; if(!f) return;
   const reader=new FileReader();
@@ -1495,7 +1476,6 @@ function onImageChange(input){
   };
   reader.readAsDataURL(f);
 }
-/* clearImage() - 첨부 이미지 삭제 및 미리보기 초기화 */
 function clearImage(){
   currentImageDataUrl=null;
   imageCleared=true;
@@ -1507,16 +1487,6 @@ function clearImage(){
 function openLightbox(src){document.getElementById("lightboxImg").src=src;document.getElementById("lightbox").classList.add("open");}
 function closeLightbox(){document.getElementById("lightbox").classList.remove("open");}
 
-/* ─────────────────────────────────────────
-   🔧 유틸리티 함수
-   parseDateOnly : 'YYYY-MM-DD' → Date 객체 (시간=00:00:00)
-   overlap       : 두 기간이 겹치는지 판별
-   isOverdue     : 미완료이고 종료일이 지났는지 체크
-   fmtDate       : 'YYYY-MM-DD' → 'YYYY-MM-DD(요일)' 형식 변환
-   todayStr      : 오늘 날짜를 'YYYY-MM-DD' 문자열로 반환
-   makeDateStr   : (y, m, d) → 'YYYY-MM-DD' 문자열 생성
-   escHtml       : XSS 방지용 HTML 특수문자 이스케이프
-───────────────────────────────────────── */
 function parseDateOnly(s){return s?new Date(s+"T00:00:00"):null;}
 function overlap(ts,te,fs,fe){
   const a=ts?ts.getTime():-Infinity,b=te?te.getTime():Infinity;
@@ -1544,7 +1514,6 @@ function escHtml(s){
 }
 function getTask(id){return tasks.find(t=>t.id===id);}
 
-/* buildYearSelect() - 년도 필터 셀렉트박스 옵션 생성 (현재 기준 -4~+4년) */
 function buildYearSelect(){
   const sel=document.getElementById("filterYear");
   const now=new Date().getFullYear();
@@ -1556,7 +1525,6 @@ function buildYearSelect(){
   }
 }
 
-/* setView(v) - 뷰 전환: 'list' 또는 'calendar' */
 function setView(v){
   currentView=v;
   document.getElementById("btnListView").classList.toggle("active",v==="list");
@@ -1566,7 +1534,6 @@ function setView(v){
   if(v==="calendar") renderCalendar();
 }
 
-/* resetForm() - 입력 폼 전체 초기화 (새 항목 추가 모드로 전환) */
 function resetForm(){
   editingId=null;currentImageDataUrl=null;
   ["fTitle","fMemo","fStart","fEnd","fReminder"].forEach(id=>document.getElementById(id).value="");
@@ -1577,7 +1544,6 @@ function resetForm(){
   document.getElementById("btnSave").textContent="💾저장";
   updateRangeLabel();
 }
-/* fillForm(t) - 기존 항목 데이터를 폼에 채워 수정 모드 진입 */
 function fillForm(t){
   if(!t) return;
   editingId=t.id;
@@ -1599,7 +1565,6 @@ document.getElementById("fCategory").value = t.category || "";
   document.getElementById("fTitle").focus();
   window.scrollTo({top:0,behavior:"smooth"});
 }
-/* saveTask() - 폼 유효성 검사 후 신규 추가 또는 기존 항목 수정 저장 */
 async function saveTask(){
    const category = document.getElementById("fCategory").value;
   const title=document.getElementById("fTitle").value.trim();
@@ -1625,7 +1590,6 @@ async function saveTask(){
   resetForm();await refresh();
 }
 
-/* getFiltered() - 필터 조건(년/월/기간/상태/카테고리)에 맞는 tasks 배열 반환 */
 function getFiltered(){
   const y=Number(document.getElementById("filterYear").value);
   const m=Number(document.getElementById("filterMonth").value);
@@ -1660,7 +1624,6 @@ if(activeCatFilter && (t.category || '') !== activeCatFilter) return false;
   return filtered;
 }
 
-/* resetFilter() - 필터 전체 초기화 (현재 년월, 전체 상태로 리셋) */
 function resetFilter(){
   const now=new Date();
   document.getElementById("filterYear").value=now.getFullYear();
@@ -1674,7 +1637,6 @@ function resetFilter(){
   filterList();
 }
 /* ── Stat Box 클릭 필터 ── */
-/* statClickAll/Done/Remain() - 통계 박스 클릭 시 해당 상태로 빠른 필터 */
 function statClickAll() {
   // 전체: 상태 필터 'all', 월 필터 유지
   document.getElementById("filterStatus").value = "all";
@@ -1725,10 +1687,6 @@ function getCatIcon(cat) {
   return m[cat] || '';
 }
 
-/**
- * render(filtered) - 필터된 tasks 배열을 DOM 카드로 렌더링
- * 통계 업데이트(전체/완료/미완료), 일괄처리 선택 수 표시도 담당
- */
 function render(filtered){
   const list=document.getElementById("taskList");
   list.innerHTML="";
@@ -1775,15 +1733,13 @@ function render(filtered){
     const div=document.createElement("div");
     div.className="task-card"+(t.done?" done-card":"")+(selectedIds.has(t.id)?" selected-card":"");
     div.innerHTML=
-    div.innerHTML=
       '<div class="task-chk-wrap">'+
         '<input type="checkbox" title="선택" '+chk1+' onchange="toggleSelect(\''+t.id+'\',this.checked)" />'+
         '<input type="checkbox" title="완료" '+chk2+' onchange="toggleDone(\''+t.id+'\',this.checked)" style="accent-color:var(--success);" />'+
-        (t.memo ? '📝' : '')+
       '</div>'+
       '<div class="task-body">'+
         '<div class="task-title">📒'+escHtml(t.title)+'</div>'+
-        '<div class="task-meta">'+period+rem+'</div>'+memoHtml+imgHtml+
+        '<div class="task-meta">'+period+rem+'</div>📝'+memoHtml+imgHtml+
         '<div class="task-actions">'+
           '<button class="btn btn-ghost btn-sm" onclick="fillForm(getTask(\''+t.id+'\'))">✏️수정</button>'+
           '<button class="btn btn-danger btn-sm" onclick="deleteOne(\''+t.id+'\')">🗑️삭제</button>'+
@@ -1797,13 +1753,11 @@ function render(filtered){
   });
 }
 
-/* toggleSelect(id, checked) - 개별 항목 체크박스(일괄처리용) 토글 */
 function toggleSelect(id,checked){
   if(checked) selectedIds.add(id); else selectedIds.delete(id);
   document.getElementById("bulkInfo").textContent=selectedIds.size+"개 선택됨";
   filterList();
 }
-/* toggleDone(id, checked) - 완료 체크박스 토글: 완료 시 오늘 날짜를 종료일/완료일로 저장 */
 async function toggleDone(id,checked){
   const t=tasks.find(x=>x.id===id); if(!t) return;
   t.done=checked;
@@ -1814,7 +1768,6 @@ async function toggleDone(id,checked){
   }
   await idbPut(t); await refresh();
 }
-/* deleteOne(id) - 단일 항목 삭제 (확인 다이얼로그 포함) */
 async function deleteOne(id){
   if(!confirm("이 항목을 삭제할까요?")) return;
   await idbDel(id); selectedIds.delete(id); await refresh(); toast("항목이 삭제되었습니다.");
@@ -1823,12 +1776,6 @@ async function deleteOne(id){
 /* ════════════════════════════════════════════
    공휴일 + 대체공휴일 (Nager.Date API + fallback 병합)
 ════════════════════════════════════════════ */
-/* ─────────────────────────────────────────
-   📅 공휴일 데이터 관리
-   holidayCache       : API 응답 캐시 (년도별)
-   KR_HOLIDAYS_FALLBACK: 오프라인/API 실패 시 사용할 하드코딩 공휴일 데이터
-   대체공휴일은 이름에 '(대체)' 포함 → isSubstituteHoliday()로 구분
-───────────────────────────────────────── */
 const holidayCache = {};
 
 // 대체공휴일 포함 하드코딩 fallback 데이터
@@ -1919,11 +1866,14 @@ function getShiftForDate(ds, part) {
   return SHIFT_PATTERN[idx];
 }
 
-function shiftBadgeHtml(shift) {
+function shiftBadgeHtml(shift, isOverride=false) {
   if(!shift) return '';
-  if(shift === '주') return '<span class="shift-badge shift-ju">주</span>';
-  if(shift === '야') return '<span class="shift-badge shift-ya">야</span>';
-  if(shift === '휴') return '<span class="shift-badge shift-hyu">휴</span>';
+  const ov = isOverride ? ' shift-override' : '';
+  if(shift === '주')   return '<span class="shift-badge shift-ju'+ov+'">주</span>';
+  if(shift === '야')   return '<span class="shift-badge shift-ya'+ov+'">야</span>';
+  if(shift === '휴')   return '<span class="shift-badge shift-hyu'+ov+'">휴</span>';
+  if(shift === '대근') return '<span class="shift-badge shift-dae'+ov+'">대</span>';
+  if(shift === '연장') return '<span class="shift-badge shift-yeon'+ov+'">연</span>';
   return '';
 }
 
@@ -2091,62 +2041,91 @@ async function renderCalendar(){
     if(!cell.other){
       const selPart=document.getElementById("calPartSelect").value;
       if(selPart){
-        const shift=getShiftForDate(ds, selPart);
-        if(shift){
+        const overrideKey=ds+'_'+selPart;
+        const overrideShift=shiftOverrides[overrideKey]||null;
+        const baseShift=getShiftForDate(ds, selPart);
+        const displayShift=overrideShift||baseShift;
+        if(displayShift){
           const sb=document.createElement("span");
-          sb.innerHTML=shiftBadgeHtml(shift);
-          numRow.appendChild(sb.firstChild);
+          sb.innerHTML=shiftBadgeHtml(displayShift, !!overrideShift);
+          const badgeEl=sb.firstChild;
+          badgeEl.title=overrideShift?('변경됨: '+overrideShift+' (원래: '+baseShift+')'):'클릭하여 근무 변경';
+          badgeEl.onclick=e=>{e.stopPropagation();openShiftPopup(e,ds,selPart,displayShift);};
+          numRow.appendChild(badgeEl);
         }
       }
     }
     el.appendChild(numRow);
 
+    const cellHeader=document.createElement("div");
+    cellHeader.className="cal-cell-header";
     if(!cell.other && holiday){
       const hd=document.createElement("span");
       hd.className="cal-holiday" + (isSub ? " is-substitute" : "");
       hd.textContent=holiday; hd.title=holiday;
-      el.appendChild(hd);
+      cellHeader.appendChild(hd);
     }
+    el.appendChild(cellHeader);
 
-   if(!cell.other){
-  const dt=getTasksForDay(ds);
-  dt.slice(0,3).forEach(t=>{
-    const isOver=isOverdue(t);
-    const baseColor=t.done?"chip-done":(isOver?"chip-over":"chip-todo");
-    const catIcon=getCatIcon(t.category);
-
-    // 시작/중간/끝/하루 구분
-    const isStart = (!t.startDate || ds === t.startDate);
-    const isEnd   = (!t.endDate   || ds === t.endDate);
-    let posClass = "";
-    if(isStart && isEnd)       posClass = "chip-single"; // 하루짜리
-    else if(isStart)           posClass = "chip-start";  // 시작일
-    else if(isEnd)             posClass = "chip-end";    // 종료일
-    else                       posClass = "chip-mid";    // 중간
-
-    const chip=document.createElement("div");
-    chip.className="cal-task-chip "+baseColor+" "+posClass;
-
-    // 시작일에만 제목 표시, 중간/끝은 공백
-    if(posClass==="chip-mid" || posClass==="chip-end"){
-      chip.textContent="\u00a0"; // 중간은 바만 보이게
-    } else {
-      chip.textContent=(catIcon?catIcon+' ':'')+t.title;
+    if(!cell.other){
+      const dt=getTasksForDay(ds);
+      dt.slice(0,3).forEach(t=>{
+        const isOver=isOverdue(t);
+        const baseColor=t.done?"chip-done":(isOver?"chip-over":"chip-todo");
+        const catIcon=getCatIcon(t.category);
+        const isStart=(!t.startDate||ds===t.startDate);
+        const isEnd=(!t.endDate||ds===t.endDate);
+        let posClass="";
+        if(isStart&&isEnd) posClass="chip-single";
+        else if(isStart)   posClass="chip-start";
+        else if(isEnd)     posClass="chip-end";
+        else               posClass="chip-mid";
+        const taskDays=(t.startDate&&t.endDate)?
+          Math.round((new Date(t.endDate+'T00:00:00')-new Date(t.startDate+'T00:00:00'))/86400000)+1:1;
+        const showEnd=(taskDays>=7);
+        const chip=document.createElement("div");
+        chip.className="cal-task-chip "+baseColor+" "+posClass;
+        if(posClass==="chip-mid"){
+          chip.textContent="\u00a0";
+          chip.classList.add("chip-hide-title");
+        } else if(posClass==="chip-end"&&showEnd){
+          chip.textContent=(catIcon?catIcon+' ':'')+t.title;
+        } else if(posClass==="chip-end"){
+          chip.textContent="\u00a0";
+          chip.classList.add("chip-hide-title");
+        } else {
+          chip.textContent=(catIcon?catIcon+' ':'')+t.title;
+        }
+        chip.title=t.title+(t.category?' ['+t.category+']':'');
+        chip.dataset.taskId=t.id;
+        chip.onclick=e=>{e.stopPropagation();openDayModal(ds);};
+        el.appendChild(chip);
+      });
+      if(dt.length>3){
+        const more=document.createElement("div");
+        more.className="cal-more"; more.textContent="+"+(dt.length-3)+"개 더";
+        el.appendChild(more);
+      }
     }
-    chip.title=t.title+(t.category?' ['+t.category+']':'');
-    chip.onclick=e=>{e.stopPropagation();openDayModal(ds);};
-    el.appendChild(chip);
-  });
-  if(dt.length>3){
-    const more=document.createElement("div");
-    more.className="cal-more"; more.textContent="+"+(dt.length-3)+"개 더";
-    el.appendChild(more);
-  }
-}
-
-
-
     grid.appendChild(el);
+  });
+
+  // 같은 task 칩 전체 동시 hover
+  grid.addEventListener('mouseover', function(e){
+    const chip=e.target.closest('.cal-task-chip');
+    if(!chip||!chip.dataset.taskId) return;
+    const tid=chip.dataset.taskId;
+    grid.querySelectorAll('.cal-task-chip[data-task-id="'+tid+'"]')
+        .forEach(c=>c.classList.add('chip-hover'));
+  });
+  grid.addEventListener('mouseout', function(e){
+    const chip=e.target.closest('.cal-task-chip');
+    if(!chip||!chip.dataset.taskId) return;
+    const tid=chip.dataset.taskId;
+    const to=e.relatedTarget;
+    if(to&&to.closest&&to.closest('.cal-task-chip[data-task-id="'+tid+'"]')) return;
+    grid.querySelectorAll('.cal-task-chip[data-task-id="'+tid+'"]')
+        .forEach(c=>c.classList.remove('chip-hover'));
   });
 }
 
@@ -2202,7 +2181,6 @@ function openAddFromDay(){
 
 
 /* ── Backup & Restore ── */
-/* backupData() - 현재 모든 할 일을 JSON 파일로 다운로드 (파일명: todo_backup_날짜시간.json) */
 function backupData() {
   const data = lsLoad();
   if(!data.length) { toast('백업할 데이터가 없습니다.'); return; }
@@ -2235,7 +2213,6 @@ async function deleteFromModal(id) {
   else closeDayModal();
 }
 
-/* restoreData(input) - JSON 백업 파일을 읽어 기존 데이터와 병합 복원 (중복 id 자동 스킵) */
 async function restoreData(input) {
   const file = input.files && input.files[0];
   if(!file) return;
@@ -2263,21 +2240,12 @@ async function restoreData(input) {
   reader.readAsText(file);
 }
 
-/* refresh() - localStorage 재로드 후 목록/달력 리렌더링 (데이터 변경 후 항상 호출) */
 async function refresh(){
   tasks=await idbAll();
   filterList();
   if(currentView==="calendar") renderCalendar();
 }
 
-/* ═══════════════════════════════════════
-   🚀 앱 초기화 (페이지 로드 시 즉시 실행)
-   - 년도 선택박스 생성
-   - 오늘 날짜 헤더에 표시
-   - 알림 권한 배너 업데이트
-   - 저장된 할 일 로드 및 목록 렌더링
-   - 30초마다 자동 새로고침 + 리마인더 체크
-   ═══════════════════════════════════════ */
 (async()=>{
   buildYearSelect();
   const now=new Date();
