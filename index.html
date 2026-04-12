@@ -340,6 +340,7 @@
     .shift-ya   { background: #111111; color: #ffffff; }
     .shift-dae  { background: #f97316; color: #fff; }
     .shift-yeon { background: #8b5cf6; color: #fff; }
+    .shift-gonghu { background: #dc2626; color: #fff; }
     .shift-badge { cursor: pointer; }
     .shift-badge.shift-override { outline: 2px solid #f59e0b; outline-offset: 1px; }
     .shift-popup-overlay { display:none; position:fixed; inset:0; z-index:9000; }
@@ -379,6 +380,19 @@
 
     .shift-legend { display: flex; gap: 10px; flex-wrap: wrap; font-size: 11px; font-weight: 600; margin-left: auto; }
     .shift-legend-item { display: flex; align-items: center; gap: 4px; color: var(--text-muted); }
+    .cal-shift-counts {
+      display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+      margin-left: auto;
+    }
+    .cal-shift-count-item { display: flex; align-items: center; gap: 4px; }
+    .cal-shift-count-num { font-size: 13px; font-weight: 800; color: var(--text); }
+    .cal-shift-count-label { font-size: 11px; font-weight: 700; color: var(--text-muted); white-space: nowrap; }
+    .cal-count-toggle {
+      padding: 2px 9px; border-radius: 6px; font-size: 11px; font-weight: 700;
+      border: 1.5px solid var(--border); background: var(--surface);
+      color: var(--text-muted); cursor: pointer; font-family: inherit; transition: all .15s;
+    }
+    .cal-count-toggle.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
 
     /* ── 달력 날짜 선택 ── */
@@ -841,13 +855,7 @@
               <option value="3">발전3파트</option>
               <option value="4">발전4파트</option>
             </select>
-            <div class="shift-legend">
-              <div class="shift-legend-item"><span class="shift-badge shift-ju">주</span> 주간근무</div>
-              <div class="shift-legend-item"><span class="shift-badge shift-ya">야</span> 야간근무</div>
-              <div class="shift-legend-item"><span class="shift-badge shift-hyu">휴</span> 휴무</div>
-              <div class="shift-legend-item"><span class="shift-badge shift-dae">대</span> 대근</div>
-              <div class="shift-legend-item"><span class="shift-badge shift-yeon">연</span> 연장</div>
-            </div>
+            <div class="cal-shift-counts" id="calShiftCounts" style="display:none;"></div>
           </div>
           <div class="cal-legend">
             <div class="cal-legend-item"><div class="cal-legend-dot dot-todo"></div>진행중</div>
@@ -1337,6 +1345,8 @@ function dpSelectYear(y) {
 }
 
 const SHIFT_OV_KEY = 'shiftOverridesv1';
+let calCountMode = 'monthly';
+function setCalCountMode(m){ calCountMode = m; renderCalendar(); }
 let shiftOverrides = JSON.parse(localStorage.getItem(SHIFT_OV_KEY) || '{}');
 function saveShiftOverrides() { localStorage.setItem(SHIFT_OV_KEY, JSON.stringify(shiftOverrides)); }
 
@@ -1874,6 +1884,7 @@ function shiftBadgeHtml(shift, isOverride=false) {
   if(shift === '휴')   return '<span class="shift-badge shift-hyu'+ov+'">휴</span>';
   if(shift === '대근') return '<span class="shift-badge shift-dae'+ov+'">대</span>';
   if(shift === '연장') return '<span class="shift-badge shift-yeon'+ov+'">연</span>';
+  if(shift === '공휴') return '<span class="shift-badge shift-gonghu">공휴</span>';
   return '';
 }
 
@@ -2003,6 +2014,7 @@ async function renderCalendar(){
   const nm=m===11?0:m+1,ny=m===11?y+1:y;
   for(let d=1;cells.length<42;d++) cells.push({d,m:nm,y:ny,other:true});
 
+  const shiftCounts={'주':0,'야':0,'휴':0,'대근':0,'연장':0,'공휴':0};
   cells.forEach((cell,idx)=>{
     const ds=makeDateStr(cell.y,cell.m,cell.d);
     const dow=idx%7;
@@ -2052,6 +2064,15 @@ async function renderCalendar(){
           badgeEl.title=overrideShift?('변경됨: '+overrideShift+' (원래: '+baseShift+')'):'클릭하여 근무 변경';
           badgeEl.onclick=e=>{e.stopPropagation();openShiftPopup(e,ds,selPart,displayShift);};
           numRow.appendChild(badgeEl);
+          if(shiftCounts.hasOwnProperty(displayShift)) shiftCounts[displayShift]++;
+          if((displayShift==='주'||displayShift==='야')&&holiday){
+            shiftCounts['공휴']++;
+            const ghSpan=document.createElement('span');
+            ghSpan.className='shift-badge shift-gonghu';
+            ghSpan.textContent='공휴';
+            ghSpan.title=holiday;
+            numRow.appendChild(ghSpan);
+          }
         }
       }
     }
@@ -2082,7 +2103,10 @@ async function renderCalendar(){
         else               posClass="chip-mid";
         const taskDays=(t.startDate&&t.endDate)?
           Math.round((new Date(t.endDate+'T00:00:00')-new Date(t.startDate+'T00:00:00'))/86400000)+1:1;
-        const showEnd=(taskDays>=7);
+        const crossMonth = (t.startDate && t.endDate) &&
+  (t.startDate.slice(0,7) !== t.endDate.slice(0,7));  // "2026-04" ≠ "2026-05"
+
+const showEnd = (taskDays >= 7) || crossMonth;
         const chip=document.createElement("div");
         chip.className="cal-task-chip "+baseColor+" "+posClass;
         if(posClass==="chip-mid"){
@@ -2127,6 +2151,46 @@ async function renderCalendar(){
     grid.querySelectorAll('.cal-task-chip[data-task-id="'+tid+'"]')
         .forEach(c=>c.classList.remove('chip-hover'));
   });
+
+  // ── 월별 / 연간 근무 카운트 표시 ──
+  const _countsEl = document.getElementById('calShiftCounts');
+  const _selPart  = document.getElementById('calPartSelect').value;
+  if(_selPart && _countsEl){
+    // 연간 카운트 계산 (12개월 전체 순회)
+    const yearlyCounts = {'주':0,'야':0,'휴':0,'대근':0,'연장':0,'공휴':0};
+    for(let mm=0; mm<12; mm++){
+      const dim = new Date(y, mm+1, 0).getDate();
+      for(let dd=1; dd<=dim; dd++){
+        const ds  = makeDateStr(y, mm, dd);
+        const ov  = shiftOverrides[ds+'_'+_selPart] || null;
+        const base= getShiftForDate(ds, _selPart);
+        const sh  = ov || base;
+        if(sh && yearlyCounts.hasOwnProperty(sh)) yearlyCounts[sh]++;
+        const hol = getHoliday(ds);
+        if((sh==='주'||sh==='야') && hol) yearlyCounts['공휴']++;
+      }
+    }
+    const isYearly   = (calCountMode === 'yearly');
+    const counts     = isYearly ? yearlyCounts : shiftCounts;
+    const periodLabel= isYearly ? (y+'년 연간') : (y+'년 '+(m+1)+'월');
+    const am = isYearly ? '' : ' active';
+    const ay = isYearly ? ' active' : '';
+    const toggleHtml =
+      `<button class="cal-count-toggle${am}" onclick="setCalCountMode('monthly')">월별</button>`+
+      `<button class="cal-count-toggle${ay}" onclick="setCalCountMode('yearly')">연간</button>`;
+    const countItemsHtml =
+      `<span class="cal-shift-count-label">${periodLabel} 근무현황&nbsp;|</span>`+
+      `<div class="cal-shift-count-item"><span class="shift-badge shift-ju">주</span><span class="cal-shift-count-num">${counts['주']}일</span></div>`+
+      `<div class="cal-shift-count-item"><span class="shift-badge shift-ya">야</span><span class="cal-shift-count-num">${counts['야']}일</span></div>`+
+      `<div class="cal-shift-count-item"><span class="shift-badge shift-hyu">휴</span><span class="cal-shift-count-num">${counts['휴']}일</span></div>`+
+      `<div class="cal-shift-count-item"><span class="shift-badge shift-dae">대</span><span class="cal-shift-count-num">${counts['대근']}일</span></div>`+
+      `<div class="cal-shift-count-item"><span class="shift-badge shift-yeon">연</span><span class="cal-shift-count-num">${counts['연장']}일</span></div>`+
+      `<div class="cal-shift-count-item"><span class="shift-badge shift-gonghu">공휴</span><span class="cal-shift-count-num">${counts['공휴']}일</span></div>`;
+    _countsEl.style.display = 'flex';
+    _countsEl.innerHTML = toggleHtml + countItemsHtml;
+  } else if(_countsEl){
+    _countsEl.style.display = 'none';
+  }
 }
 
 function openDayModal(ds){
