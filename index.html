@@ -304,11 +304,34 @@
     .cal-cell.dow-sun .cal-day-num { color: #e53e3e; }
     .cal-cell.dow-sat .cal-day-num { color: var(--accent); }
 
-    .cal-task-chip {
-      font-size: 11px; font-weight: 600; padding: 2px 5px; border-radius: 4px;
-      margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-      display: block; cursor: pointer; transition: opacity .14s;
-    }
+.cal-task-chip {
+  font-size: 11px; font-weight: 600; padding: 2px 5px; border-radius: 0px;
+  margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  display: block; cursor: pointer; transition: opacity .14s;
+}
+/* 기간 시작일: 왼쪽만 둥글게 */
+.cal-task-chip.chip-start {
+  border-radius: 6px 0 0 6px;
+  margin-right: -4px;
+}
+/* 기간 종료일: 오른쪽만 둥글게 */
+.cal-task-chip.chip-end {
+  border-radius: 0 6px 6px 0;
+  margin-left: -4px;
+}
+/* 시작=종료(하루짜리): 양쪽 둥글게 */
+.cal-task-chip.chip-single {
+  border-radius: 6px;
+}
+/* 중간 날짜: 텍스트 숨김 (바만 표시) */
+.cal-task-chip.chip-mid {
+  color: transparent !important;
+  border-radius: 0;
+  margin-left: -4px;
+  margin-right: -4px;
+}
+
+
     .cal-task-chip:hover { opacity: 0.75; }
     .chip-todo { background: #dbeafe; color: #1e40af; }
     .chip-done { background: #dcfce7; color: #166534; }
@@ -2085,23 +2108,44 @@ async function renderCalendar(){
       el.appendChild(hd);
     }
 
-    if(!cell.other){
-      const dt=getTasksForDay(ds);
-      dt.slice(0,3).forEach(t=>{
-        const isOver=isOverdue(t);
-        const chip=document.createElement("div");
-        chip.className="cal-task-chip "+(t.done?"chip-done":(isOver?"chip-over":"chip-todo"));
-        const catIcon=getCatIcon(t.category);
-        chip.textContent=(catIcon?catIcon+' ':'')+t.title; chip.title=t.title+(t.category?' ['+t.category+']':'');
-        chip.onclick=e=>{e.stopPropagation();openDayModal(ds);};
-        el.appendChild(chip);
-      });
-      if(dt.length>3){
-        const more=document.createElement("div");
-        more.className="cal-more"; more.textContent="+"+(dt.length-3)+"개 더";
-        el.appendChild(more);
-      }
+   if(!cell.other){
+  const dt=getTasksForDay(ds);
+  dt.slice(0,3).forEach(t=>{
+    const isOver=isOverdue(t);
+    const baseColor=t.done?"chip-done":(isOver?"chip-over":"chip-todo");
+    const catIcon=getCatIcon(t.category);
+
+    // 시작/중간/끝/하루 구분
+    const isStart = (!t.startDate || ds === t.startDate);
+    const isEnd   = (!t.endDate   || ds === t.endDate);
+    let posClass = "";
+    if(isStart && isEnd)       posClass = "chip-single"; // 하루짜리
+    else if(isStart)           posClass = "chip-start";  // 시작일
+    else if(isEnd)             posClass = "chip-end";    // 종료일
+    else                       posClass = "chip-mid";    // 중간
+
+    const chip=document.createElement("div");
+    chip.className="cal-task-chip "+baseColor+" "+posClass;
+
+    // 시작일에만 제목 표시, 중간/끝은 공백
+    if(posClass==="chip-mid" || posClass==="chip-end"){
+      chip.textContent="\u00a0"; // 중간은 바만 보이게
+    } else {
+      chip.textContent=(catIcon?catIcon+' ':'')+t.title;
     }
+    chip.title=t.title+(t.category?' ['+t.category+']':'');
+    chip.onclick=e=>{e.stopPropagation();openDayModal(ds);};
+    el.appendChild(chip);
+  });
+  if(dt.length>3){
+    const more=document.createElement("div");
+    more.className="cal-more"; more.textContent="+"+(dt.length-3)+"개 더";
+    el.appendChild(more);
+  }
+}
+
+
+
     grid.appendChild(el);
   });
 }
