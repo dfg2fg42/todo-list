@@ -116,7 +116,7 @@
     .filter-bar select,
     .filter-bar input { background: var(--surface); font-size: 12px; padding: 7px 8px; }
     .fg-year   { width: 100px; }
-    .fg-month  { width: 80px; }
+    .fg-month  { width: 136px; }
     .fg-date   { width: 160px; }
     .fg-status { width: 100px; }
 
@@ -673,8 +673,32 @@
 
   .badge-repeat { background: #fde68a; color: #92400e; }
   .badge-repeat-inst { background: #fef3c7; color: #b45309; }
+  /* 목록 월 이동 버튼 */
+  .month-nav-btn {
+    width:28px; height:28px; min-width:28px; border-radius:7px; border:none;
+    background:var(--surface2); color:var(--text); font-size:12px;
+    cursor:pointer; display:flex; align-items:center; justify-content:center;
+    transition:.15s; flex-shrink:0; padding:0;
+  }
+  .month-nav-btn:hover { background:var(--accent); color:#fff; }
+  .fg-month-wrap { display:flex; align-items:center; gap:4px; width:100%; }
+  .fg-month-wrap select { flex:1; min-width:0; }
   .badge-repeat-last { background: #fee2e2; color: #b91c1c; animation: pulse-last 1.5s infinite; }
   @keyframes pulse-last { 0%,100%{opacity:1;} 50%{opacity:0.55;} }
+
+  /* 반복 삭제 다이얼로그 */
+  .rdlg-overlay { position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center; }
+  .rdlg-box { background:var(--surface);border-radius:16px;padding:24px 20px 20px;max-width:320px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.3); }
+  .rdlg-title { font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px; }
+  .rdlg-sub { font-size:13px;color:var(--text-muted);margin-bottom:18px;line-height:1.5; }
+  .rdlg-btns { display:flex;flex-direction:column;gap:8px; }
+  .rdlg-btn { padding:11px 16px;border-radius:10px;border:none;font-size:14px;font-weight:600;cursor:pointer;transition:.15s; }
+  .rdlg-btn-one  { background:#fee2e2;color:#b91c1c; }
+  .rdlg-btn-one:hover  { background:#fecaca; }
+  .rdlg-btn-all  { background:#ef4444;color:#fff; }
+  .rdlg-btn-all:hover  { background:#dc2626; }
+  .rdlg-btn-cancel { background:var(--surface2);color:var(--text-muted); }
+  .rdlg-btn-cancel:hover { background:var(--border); }
   </style>
 </head>
 <body>
@@ -854,15 +878,19 @@
             </div>
             <div class="form-group fg-month">
               <label style="text-align:center;">🌕 [월]</label>
-              <select id="filterMonth" onchange="filterList()" style="text-align:center;">
-                <option value="0">전체</option>
-                <option value="1">1월</option><option value="2">2월</option>
-                <option value="3">3월</option><option value="4">4월</option>
-                <option value="5">5월</option><option value="6">6월</option>
-                <option value="7">7월</option><option value="8">8월</option>
-                <option value="9">9월</option><option value="10">10월</option>
-                <option value="11">11월</option><option value="12">12월</option>
-              </select>
+              <div class="fg-month-wrap">
+                <button class="month-nav-btn" onclick="listMonthNav(-1)" title="이전 달">&#9664;</button>
+                <select id="filterMonth" onchange="filterList()" style="text-align:center;">
+                  <option value="0">전체</option>
+                  <option value="1">1월</option><option value="2">2월</option>
+                  <option value="3">3월</option><option value="4">4월</option>
+                  <option value="5">5월</option><option value="6">6월</option>
+                  <option value="7">7월</option><option value="8">8월</option>
+                  <option value="9">9월</option><option value="10">10월</option>
+                  <option value="11">11월</option><option value="12">12월</option>
+                </select>
+                <button class="month-nav-btn" onclick="listMonthNav(1)" title="다음 달">&#9654;</button>
+              </div>
             </div>
             <div class="form-group" style="min-width:190px;">
               <label style="text-align:center;">📅 [기간]</label>
@@ -1914,6 +1942,8 @@ async function toggleDone(id,checked){
   await idbPut(t); await refresh();
 }
 async function deleteOne(id){
+  const t = tasks.find(x=>x.id===id);
+  if(t && t.repeatFrom) { showRepeatDeleteDialog(id, 'list'); return; }
   if(!confirm("이 항목을 삭제할까요?")) return;
   await idbDel(id); selectedIds.delete(id); await refresh(); toast("항목이 삭제되었습니다.");
 }
@@ -2419,12 +2449,13 @@ function backupData() {
 }
 
 async function deleteFromModal(id) {
+  const t = tasks.find(x=>x.id===id);
+  if(t && t.repeatFrom) { showRepeatDeleteDialog(id, 'modal'); return; }
   if(!confirm("이 항목을 삭제할까요?")) return;
   await idbDel(id);
   selectedIds.delete(id);
   await refresh();
   toast("항목이 삭제되었습니다.");
-  // 모달 내 목록 갱신 (날짜 재렌더)
   if(dayModalDate) openDayModal(dayModalDate);
   else closeDayModal();
 }
@@ -2502,6 +2533,85 @@ function checkRepeatLastNotice() {
       });
     }
   });
+}
+
+// ── 반복 삭제 다이얼로그 ──
+let _rdlgTargetId = null;
+let _rdlgCaller = null; // 'list' | 'modal'
+
+function showRepeatDeleteDialog(id, caller) {
+  const t = tasks.find(x => x.id === id);
+  if (!t) return;
+  _rdlgTargetId = id;
+  _rdlgCaller = caller;
+  const tmpl = tasks.find(x => x.id === t.repeatFrom);
+  const tmplTitle = tmpl ? tmpl.title : t.title;
+  document.getElementById('rdlgSub').innerHTML =
+    '<b>"' + escHtml(tmplTitle) + '"</b><br>' +
+    '이번 달 항목만 삭제할지, 반복 스케줄 전체(템플릿+모든 인스턴스)를 삭제할지 선택하세요.';
+  document.getElementById('rdlgOverlay').style.display = 'flex';
+}
+
+function closeRepeatDeleteDialog() {
+  document.getElementById('rdlgOverlay').style.display = 'none';
+  _rdlgTargetId = null;
+  _rdlgCaller = null;
+}
+
+async function confirmRepeatDelete(mode) {
+  const id = _rdlgTargetId;
+  closeRepeatDeleteDialog();
+  if (!id) return;
+
+  const t = tasks.find(x => x.id === id);
+  if (!t) return;
+
+  if (mode === 'one') {
+    // 이번 달만 삭제 (블랙리스트에 등록 → 재생성 차단)
+    await idbDel(id);
+    selectedIds.delete(id);
+    await refresh();
+    toast('이번 달 반복 일정이 삭제되었습니다.');
+  } else {
+    // 전체 삭제: 템플릿 + 모든 인스턴스 삭제
+    const tmplId = t.repeatFrom;
+    const allNow = lsLoad();
+    const insts = allNow.filter(x => x.repeatFrom === tmplId);
+    for (const x of insts) await idbDel(x.id);
+    // 템플릿도 삭제
+    const tmpl = allNow.find(x => x.id === tmplId);
+    if (tmpl) await idbDel(tmplId);
+    selectedIds.clear();
+    await refresh();
+    toast('반복 스케줄 전체가 삭제되었습니다.');
+  }
+
+  if (_rdlgCaller === 'modal') {
+    if (dayModalDate) openDayModal(dayModalDate);
+    else closeDayModal();
+  }
+}
+
+// ── 목록 월 이동 ──
+function listMonthNav(dir) {
+  const mSel = document.getElementById('filterMonth');
+  const ySel = document.getElementById('filterYear');
+  let m = Number(mSel.value);
+  let y = Number(ySel.value);
+  // 전체(0)일 때는 현재 달부터 시작
+  if (m === 0) { m = new Date().getMonth() + 1; }
+  m += dir;
+  if (m < 1)  { m = 12; y--; }
+  if (m > 12) { m = 1;  y++; }
+  // 년도 select에 해당 년도 없으면 추가
+  if (!Array.from(ySel.options).find(o => Number(o.value) === y)) {
+    const opt = document.createElement('option');
+    opt.value = y; opt.textContent = y + '년';
+    ySel.appendChild(opt);
+  }
+  ySel.value = y;
+  mSel.value = m;
+  filterList();
 }
 
 // ── 반복 옵션 토글 ──
@@ -2624,5 +2734,17 @@ async function syncRepeatTasks() {
 }
 
 </script>
+<!-- 반복 삭제 다이얼로그 -->
+<div class="rdlg-overlay" id="rdlgOverlay" style="display:none;" onclick="closeRepeatDeleteDialog()">
+  <div class="rdlg-box" onclick="event.stopPropagation()">
+    <div class="rdlg-title">🔁 반복 스케줄 삭제</div>
+    <div class="rdlg-sub" id="rdlgSub"></div>
+    <div class="rdlg-btns">
+      <button class="rdlg-btn rdlg-btn-one"   onclick="confirmRepeatDelete('one')">이번 달만 삭제</button>
+      <button class="rdlg-btn rdlg-btn-all"   onclick="confirmRepeatDelete('all')">반복 스케줄 전체 삭제</button>
+      <button class="rdlg-btn rdlg-btn-cancel" onclick="closeRepeatDeleteDialog()">취소</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
