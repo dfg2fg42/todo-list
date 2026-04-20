@@ -762,19 +762,19 @@
           <label>🔁 반복 설정</label>
           <select id="fRepeat" onchange="toggleRepeatOptions()">
             <option value="">반복 안함</option>
-            <option value="weekly_nth">매월 N번째 요일</option>
+            <option value="weekly_nth">매월 N번째 N요일</option>
           </select>
         </div>
         <div id="repeatOptions" style="display:none;background:var(--surface2);border:1.5px solid var(--border);border-radius:9px;padding:12px;margin-bottom:14px;">
           <div class="form-row">
             <div class="form-group" style="margin-bottom:0;">
-              <label>📅 몇 번째</label>
+              <label>📅 주 선택</label>
               <select id="fRepeatNth">
-                <option value="1">1번째</option>
-                <option value="2">2번째</option>
-                <option value="3">3번째</option>
-                <option value="4">4번째</option>
-                <option value="5">마지막</option>
+                <option value="1">첫째 주</option>
+                <option value="2">둘째 주</option>
+                <option value="3">셋째 주</option>
+                <option value="4">넷째 주</option>
+                <option value="5">마지막 주</option>
               </select>
             </div>
             <div class="form-group" style="margin-bottom:0;">
@@ -791,13 +791,13 @@
             </div>
           </div>
           <div class="form-group" style="margin-top:10px;margin-bottom:0;">
-            <label>🏭 적용 파트</label>
+            <label>👥 적용 파트</label>
             <select id="fRepeatPart">
               <option value="">-- 전체 공통 --</option>
-              <option value="1">1파트</option>
-              <option value="2">2파트</option>
-              <option value="3">3파트</option>
-              <option value="4">4파트</option>
+              <option value="1"selected>발전 1파트</option>
+              <option value="2">발전 2파트</option>
+              <option value="3">발전 3파트</option>
+              <option value="4">발전 4파트</option>
             </select>
           </div>
           <div class="form-group" style="margin-top:10px;margin-bottom:0;">
