@@ -1774,10 +1774,11 @@ function render(filtered){
       '<div class="task-chk-wrap">'+
         '<input type="checkbox" title="선택" '+chk1+' onchange="toggleSelect(\''+t.id+'\',this.checked)" />'+
         '<input type="checkbox" title="완료" '+chk2+' onchange="toggleDone(\''+t.id+'\',this.checked)" style="accent-color:var(--success);" />'+
+        (t.memo ? '<span title="메모 있음" style="font-size:15px;line-height:1;cursor:default;" >📝</span>' : '')+
       '</div>'+
       '<div class="task-body">'+
         '<div class="task-title">📒'+escHtml(t.title)+'</div>'+
-        '<div class="task-meta">'+period+rem+'</div>📝'+memoHtml+imgHtml+
+        '<div class="task-meta">'+period+rem+'</div>'+memoHtml+imgHtml+
         '<div class="task-actions">'+
           '<button class="btn btn-ghost btn-sm" onclick="fillForm(getTask(\''+t.id+'\'))">✏️수정</button>'+
           '<button class="btn btn-danger btn-sm" onclick="deleteOne(\''+t.id+'\')">🗑️삭제</button>'+
