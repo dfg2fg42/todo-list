@@ -683,6 +683,8 @@
   .month-nav-btn:hover { background:var(--accent); color:#fff; }
   .fg-month-wrap { display:flex; align-items:center; gap:4px; width:100%; }
   .fg-month-wrap select { flex:1; min-width:0; }
+  .badge-dday { background: #fef08a; color: #713f12; font-weight:800; animation: pulse-last 1.5s infinite; }
+  .badge-dday-end { background: #f97316; color: #fff; font-weight:800; animation: pulse-last 1.5s infinite; }
   .badge-repeat-last { background: #fee2e2; color: #b91c1c; animation: pulse-last 1.5s infinite; }
   @keyframes pulse-last { 0%,100%{opacity:1;} 50%{opacity:0.55;} }
 
@@ -794,10 +796,10 @@
             <label>👥 적용 파트</label>
             <select id="fRepeatPart">
               <option value="">-- 전체 공통 --</option>
-              <option value="1"selected>발전 1파트</option>
-              <option value="2">발전 2파트</option>
-              <option value="3">발전 3파트</option>
-              <option value="4">발전 4파트</option>
+              <option value="1"selected>발전1파트</option>
+              <option value="2">발전2파트</option>
+              <option value="3">발전3파트</option>
+              <option value="4">발전4파트</option>
             </select>
           </div>
           <div class="form-group" style="margin-top:10px;margin-bottom:0;">
@@ -1587,10 +1589,29 @@ function checkReminders(){
   if(!("Notification" in window)||Notification.permission!=="granted") return;
   const now=Date.now();
   tasks.forEach(async t=>{
-    if(t.done||t.reminded||!t.reminderAt) return;
-    if(new Date(t.reminderAt).getTime()<=now){
-      try{new Notification("ToDo 리마인더",{body:t.title});}catch(e){}
-      t.reminded=true; await idbPut(t);
+    // 리마인더 알림 (30초 인터벌)
+    if(!t.done&&!t.reminded&&t.reminderAt){
+      if(new Date(t.reminderAt).getTime()<=now){
+        try{new Notification("📋 ToDo 리마인더",{body:t.title});}catch(e){}
+        t.reminded=true; await idbPut(t);
+      }
+    }
+  });
+}
+
+// D-day 알림: 앱 시작(새로고침) 시마다 호출
+function checkDday(){
+  if(!("Notification" in window)||Notification.permission!=="granted") return;
+  const today=todayStr();
+  tasks.forEach(t=>{
+    if(!t.done && !t.repeat){
+      const isStart = t.startDate && t.startDate===today;
+      const isEnd   = t.endDate   && t.endDate===today;
+      if(isStart||isEnd){
+        const label = (t.startDate===t.endDate||!t.endDate) ? 'D-Day' : (isEnd ? '📅 종료 D-Day' : '📅 시작 D-Day');
+        try{ new Notification('🔔 ' + label, {body: t.title}); }catch(e){}
+        toast('🔔 ' + label + ': ' + t.title, 5000);
+      }
     }
   });
 }
@@ -1920,6 +1941,8 @@ function render(filtered){
       (t.repeat==='weekly_nth'?'<span class="badge badge-repeat">🔁반복</span>':'')+
       (t.repeatFrom&&!t.repeatIsLast?'<span class="badge badge-repeat-inst" title="반복스케줄">🔁 반복</span>':'')+
       (t.repeatIsLast?'<span class="badge badge-repeat-last" title="마지막 반복 일정입니다. 재등록 필요!">⚠️ 반복 마지막</span>':'')+
+      (!t.done&&!t.repeat&&t.endDate&&t.endDate===todayStr()?'<span class="badge badge-dday-end">🔔 D-Day</span>':'') +
+      (!t.done&&!t.repeat&&t.startDate&&t.startDate===todayStr()&&t.startDate!==t.endDate?'<span class="badge badge-dday">📅 시작 D-Day</span>':'') +
       '<span class="badge '+sCls+'">'+sTxt+'</span>'+
       '</div>';
     list.appendChild(div);
@@ -2510,6 +2533,8 @@ document.getElementById("todayLabel").innerHTML =
   await refresh();
   await syncRepeatTasks();
   checkRepeatLastNotice();
+  checkReminders();
+  checkDday();
   setInterval(async()=>{await refresh();checkReminders();},30000);
   setInterval(async()=>{await syncRepeatTasks();},3600000);
 })();
@@ -2746,62 +2771,5 @@ async function syncRepeatTasks() {
     </div>
   </div>
 </div>
-<script>
-  // 마우스 우클릭 차단
-  document.addEventListener('contextmenu', function(e) {
-    e.preventDefault();
-    return false;
-  });
-
-  // F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U 키 차단
-  document.addEventListener('keydown', function(e) {
-    // F12
-    if (e.key === 'F12') {
-      e.preventDefault();
-      return false;
-    }
-    // Ctrl+Shift+I (개발자 도구)
-    if (e.ctrlKey && e.shiftKey && e.key === 'I') {
-      e.preventDefault();
-      return false;
-    }
-    // Ctrl+Shift+J (콘솔)
-    if (e.ctrlKey && e.shiftKey && e.key === 'J') {
-      e.preventDefault();
-      return false;
-    }
-    // Ctrl+U (소스 보기)
-    if (e.ctrlKey && e.key === 'u') {
-      e.preventDefault();
-      return false;
-    }
-    // Ctrl+S (저장 차단)
-    if (e.ctrlKey && e.key === 's') {
-      e.preventDefault();
-      return false;
-    }
-  });
-
-  // 개발자 도구 열림 감지 후 경고
-  (function() {
-    const devtools = { open: false };
-    const threshold = 160;
-    setInterval(function() {
-      if (
-        window.outerWidth - window.innerWidth > threshold ||
-        window.outerHeight - window.innerHeight > threshold
-      ) {
-        if (!devtools.open) {
-          devtools.open = true;
-          alert('⚠️ 개발자 도구 사용은 허용되지 않습니다.');
-          window.location.reload();
-        }
-      } else {
-        devtools.open = false;
-      }
-    }, 500);
-  })();
-</script>
-
 </body>
 </html>
