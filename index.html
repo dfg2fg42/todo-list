@@ -1897,13 +1897,13 @@ function render(filtered){
     return true;
   });
   document.getElementById("statTotal").textContent=_baseFiltered.length;
-  // 완료: 현재 필터 조건 기준
+  // 완료: 현재 필터 조건 기준 (카테고리 포함)
   let _doneTasks;
   if(_sm!==0){
     _doneTasks=_baseFiltered.filter(t=>t.done);
     document.getElementById("statDoneSub").textContent=_sy+"년 "+_sm+"월 기준";
   } else {
-    _doneTasks=tasks.filter(t=>t.done);
+    _doneTasks=_baseFiltered.filter(t=>t.done);
     document.getElementById("statDoneSub").textContent=_sy+"년 전체 기준";
   }
   document.getElementById("statDone").textContent=_doneTasks.length;
