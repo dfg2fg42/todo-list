@@ -671,6 +671,10 @@
       font-size: 10px; color: var(--text-muted); margin-top: 2px; font-weight: 500;
     }
 
+  .badge-repeat { background: #fde68a; color: #92400e; }
+  .badge-repeat-inst { background: #fef3c7; color: #b45309; }
+  .badge-repeat-last { background: #fee2e2; color: #b91c1c; animation: pulse-last 1.5s infinite; }
+  @keyframes pulse-last { 0%,100%{opacity:1;} 50%{opacity:0.55;} }
   </style>
 </head>
 <body>
@@ -729,6 +733,57 @@
           </button>
           <input id="fStart" type="hidden" />
           <input id="fEnd" type="hidden" />
+        </div>
+        <div class="form-group">
+          <label>🔁 반복 설정</label>
+          <select id="fRepeat" onchange="toggleRepeatOptions()">
+            <option value="">반복 안함</option>
+            <option value="weekly_nth">매월 N번째 요일</option>
+          </select>
+        </div>
+        <div id="repeatOptions" style="display:none;background:var(--surface2);border:1.5px solid var(--border);border-radius:9px;padding:12px;margin-bottom:14px;">
+          <div class="form-row">
+            <div class="form-group" style="margin-bottom:0;">
+              <label>📅 몇 번째</label>
+              <select id="fRepeatNth">
+                <option value="1">1번째</option>
+                <option value="2">2번째</option>
+                <option value="3">3번째</option>
+                <option value="4">4번째</option>
+                <option value="5">마지막</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label>📆 요일</label>
+              <select id="fRepeatDow">
+                <option value="0">일요일</option>
+                <option value="1">월요일</option>
+                <option value="2">화요일</option>
+                <option value="3">수요일</option>
+                <option value="4">목요일</option>
+                <option value="5">금요일</option>
+                <option value="6">토요일</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group" style="margin-top:10px;margin-bottom:0;">
+            <label>🏭 적용 파트</label>
+            <select id="fRepeatPart">
+              <option value="">-- 전체 공통 --</option>
+              <option value="1">1파트</option>
+              <option value="2">2파트</option>
+              <option value="3">3파트</option>
+              <option value="4">4파트</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-top:10px;margin-bottom:0;">
+            <label>🌗 근무 조건</label>
+            <select id="fRepeatShift">
+              <option value="ju">☀️ 주간만</option>
+              <option value="ya">🌙 야간만</option>
+              <option value="both">☀️🌙 주간+야간</option>
+            </select>
+          </div>
         </div>
         <div class="form-group">
           <label>🔔 리마인더</label>
@@ -1454,7 +1509,24 @@ async function idbPut(t) {
   if(i>=0) all[i]=t; else all.push(t);
   lsSave(all);
 }
-async function idbDel(id) { lsSave(lsLoad().filter(x=>x.id!==id)); }
+async function idbDel(id) {
+  const all = lsLoad();
+  const target = all.find(x => x.id === id);
+  if (target) {
+    // 반복 인스턴스 삭제 시 블랙리스트에 등록 (재생성 방지)
+    if (target.repeatFrom && target.startDate) {
+      addDeletedRepeatInst(target.repeatFrom, target.startDate);
+    }
+    // 반복 템플릿 삭제 시 연관 블랙리스트 항목 정리
+    if (target.repeat === 'weekly_nth') {
+      try {
+        const bl = getDeletedRepeatInsts().filter(k => !k.startsWith(id + '_'));
+        localStorage.setItem('deletedRepeatInsts', JSON.stringify(bl));
+      } catch(e) {}
+    }
+  }
+  lsSave(all.filter(x => x.id !== id));
+}
 
 let tasks=[], selectedIds=new Set(), editingId=null, currentImageDataUrl=null, imageCleared=false;
 let currentView='list', calYear=new Date().getFullYear(), calMonth=new Date().getMonth(), dayModalDate=null;
@@ -1580,6 +1652,8 @@ function resetForm(){
   document.getElementById("imgClearBtn").style.display="none";
   document.getElementById("formTitle").textContent="➕새 항목 추가";
   document.getElementById("btnSave").textContent="💾저장";
+  document.getElementById('fRepeat').value='';
+  document.getElementById('repeatOptions').style.display='none';
   updateRangeLabel();
 }
 function fillForm(t){
@@ -1600,6 +1674,14 @@ document.getElementById("fCategory").value = t.category || "";
   document.getElementById("formTitle").textContent="📝 항목 수정";
   document.getElementById("btnSave").textContent="🔃 업데이트";
   updateRangeLabel();
+  document.getElementById('fRepeat').value=t.repeat||'';
+  toggleRepeatOptions();
+  if(t.repeat){
+    document.getElementById('fRepeatNth').value=t.repeatNth||'1';
+    document.getElementById('fRepeatDow').value=t.repeatDow||'1';
+    document.getElementById('fRepeatPart').value=t.repeatPart||'';
+    document.getElementById('fRepeatShift').value=t.repeatShift||'ju';
+  }
   document.getElementById("fTitle").focus();
   window.scrollTo({top:0,behavior:"smooth"});
 }
@@ -1615,17 +1697,29 @@ async function saveTask(){
   let imageDataUrl=null;
   if(currentImageDataUrl) imageDataUrl=currentImageDataUrl;
   else if(editingId&&!imageCleared){const old=tasks.find(x=>x.id===editingId);if(old) imageDataUrl=old.imageDataUrl||null;}
+  const repeatVal=document.getElementById('fRepeat').value;
+  const repeatNth=repeatVal?document.getElementById('fRepeatNth').value:'';
+  const repeatDow=repeatVal?document.getElementById('fRepeatDow').value:'';
+  const repeatPart=repeatVal?document.getElementById('fRepeatPart').value:'';
+  const repeatShift=repeatVal?document.getElementById('fRepeatShift').value:'ju';
   if(editingId){
     const old=tasks.find(x=>x.id===editingId);
+    if(old.repeat==='weekly_nth'){
+      const insts=tasks.filter(x=>x.repeatFrom===old.id);
+      for(const x of insts) await idbDel(x.id);
+    }
     await idbPut({...old,title,memo,category,startDate,endDate,reminderAt,imageDataUrl,
-      reminded:old.reminderAt!==reminderAt?false:(old.reminded||false)});
+      reminded:old.reminderAt!==reminderAt?false:(old.reminded||false),
+      repeat:repeatVal,repeatNth,repeatDow,repeatPart,repeatShift});
     toast("항목이 수정되었습니다.");
   } else {
     const id=(typeof crypto!=="undefined"&&crypto.randomUUID)?crypto.randomUUID():Date.now().toString();
-    await idbPut({id,title,memo,category,startDate,endDate,reminderAt,reminded:false,done:false,createdAt:Date.now(),imageDataUrl});
+    await idbPut({id,title,memo,category,startDate,endDate,reminderAt,reminded:false,done:false,createdAt:Date.now(),imageDataUrl,
+      repeat:repeatVal,repeatNth,repeatDow,repeatPart,repeatShift,repeatFrom:''});
     toast("항목이 추가되었습니다.");
   }
   resetForm();await refresh();
+  if(repeatVal==='weekly_nth') await syncRepeatTasks();
 }
 
 function getFiltered(){
@@ -1640,6 +1734,7 @@ function getFiltered(){
   if(m!==0){ms=new Date(y,m-1,1);me=new Date(y,m,0,23,59,59);}
 
   const filtered=tasks.filter(t=>{
+    if(t.repeat==='weekly_nth') return false;
     const ts=parseDateOnly(t.startDate)||parseDateOnly(t.endDate);
     const te=parseDateOnly(t.endDate)||parseDateOnly(t.startDate);
     if(m!==0&&ts&&!overlap(ts,te,ms,me)) return false;
@@ -1728,27 +1823,35 @@ function getCatIcon(cat) {
 function render(filtered){
   const list=document.getElementById("taskList");
   list.innerHTML="";
-  // 전체: 모든 task
-  document.getElementById("statTotal").textContent=tasks.length;
-  // 완료: 현재 선택된 년/월 기준으로 카운팅
+  // 전체: 현재 필터 조건(년/월/기간/카테고리) 기준 카운팅 (상태 필터 제외)
   const _sy=Number(document.getElementById("filterYear").value);
   const _sm=Number(document.getElementById("filterMonth").value);
+  const _fs=parseDateOnly(document.getElementById("filterStart").value);
+  const _fe=parseDateOnly(document.getElementById("filterEnd").value);
+  let _ms=null,_me=null;
+  if(_sm!==0){_ms=new Date(_sy,_sm-1,1);_me=new Date(_sy,_sm,0,23,59,59);}
+  const _baseFiltered=tasks.filter(t=>{
+    if(t.repeat==='weekly_nth') return false;
+    const ts=parseDateOnly(t.startDate)||parseDateOnly(t.endDate);
+    const te=parseDateOnly(t.endDate)||parseDateOnly(t.startDate);
+    if(_sm!==0&&ts&&!overlap(ts,te,_ms,_me)) return false;
+    if((_fs||_fe)&&ts&&!overlap(ts,te,_fs,_fe)) return false;
+    if(activeCatFilter && (t.category||'')!==activeCatFilter) return false;
+    return true;
+  });
+  document.getElementById("statTotal").textContent=_baseFiltered.length;
+  // 완료: 현재 필터 조건 기준
   let _doneTasks;
   if(_sm!==0){
-    const _ms=new Date(_sy,_sm-1,1), _me=new Date(_sy,_sm,0,23,59,59);
-    _doneTasks=tasks.filter(t=>{
-      if(!t.done) return false;
-      const te=parseDateOnly(t.endDate)||parseDateOnly(t.startDate);
-      return te&&te>=_ms&&te<=_me;
-    });
+    _doneTasks=_baseFiltered.filter(t=>t.done);
     document.getElementById("statDoneSub").textContent=_sy+"년 "+_sm+"월 기준";
   } else {
     _doneTasks=tasks.filter(t=>t.done);
     document.getElementById("statDoneSub").textContent=_sy+"년 전체 기준";
   }
   document.getElementById("statDone").textContent=_doneTasks.length;
-  // 미완료: 전체 기준 (월 필터 무관)
-  document.getElementById("statRemain").textContent=tasks.filter(t=>!t.done).length;
+  // 미완료: 현재 필터 조건 기준
+  document.getElementById("statRemain").textContent=_baseFiltered.filter(t=>!t.done).length;
   updateStatActive();
   document.getElementById("bulkInfo").textContent=selectedIds.size+"개 선택됨";
 
@@ -1774,7 +1877,7 @@ function render(filtered){
       '<div class="task-chk-wrap">'+
         '<input type="checkbox" title="선택" '+chk1+' onchange="toggleSelect(\''+t.id+'\',this.checked)" />'+
         '<input type="checkbox" title="완료" '+chk2+' onchange="toggleDone(\''+t.id+'\',this.checked)" style="accent-color:var(--success);" />'+
-        (t.memo ? '<span title="메모 있음" style="font-size:15px;line-height:1;cursor:default;" >📝</span>' : '')+
+        (t.memo ? '<span title="메모" style="font-size:14px;line-height:1;">📝</span>' : '')+
       '</div>'+
       '<div class="task-body">'+
         '<div class="task-title">📒'+escHtml(t.title)+'</div>'+
@@ -1786,6 +1889,9 @@ function render(filtered){
       '</div>'+
       '<div class="task-aside">'+
       (getCatIcon(t.category)?'<span style="font-size:13px;background:#fef9c3;color:#a16207;padding:2px 9px;border-radius:999px;font-weight:700;white-space:nowrap;" title="'+(t.category||'')+'">'+getCatIcon(t.category)+' '+(t.category||'')+'</span>':'')+
+      (t.repeat==='weekly_nth'?'<span class="badge badge-repeat">🔁반복</span>':'')+
+      (t.repeatFrom&&!t.repeatIsLast?'<span class="badge badge-repeat-inst" title="반복스케줄">🔁 반복</span>':'')+
+      (t.repeatIsLast?'<span class="badge badge-repeat-last" title="마지막 반복 일정입니다. 재등록 필요!">⚠️ 반복 마지막</span>':'')+
       '<span class="badge '+sCls+'">'+sTxt+'</span>'+
       '</div>';
     list.appendChild(div);
@@ -2141,16 +2247,17 @@ async function renderCalendar(){
 const showEnd = (taskDays >= 7) || crossMonth;
         const chip=document.createElement("div");
         chip.className="cal-task-chip "+baseColor+" "+posClass;
+        const repeatPrefix = t.repeatIsLast ? '⚠️ ' : (t.repeatFrom || t.repeat==='weekly_nth') ? '🔁 ' : '';
         if(posClass==="chip-mid"){
           chip.textContent="\u00a0";
           chip.classList.add("chip-hide-title");
         } else if(posClass==="chip-end"&&showEnd){
-          chip.textContent=(catIcon?catIcon+' ':'')+t.title;
+          chip.textContent=repeatPrefix+(catIcon?catIcon+' ':'')+t.title;
         } else if(posClass==="chip-end"){
           chip.textContent="\u00a0";
           chip.classList.add("chip-hide-title");
         } else {
-          chip.textContent=(catIcon?catIcon+' ':'')+t.title;
+          chip.textContent=repeatPrefix+(catIcon?catIcon+' ':'')+t.title;
         }
         chip.title=t.title+(t.category?' ['+t.category+']':'');
         chip.dataset.taskId=t.id;
@@ -2257,7 +2364,7 @@ function openDayModal(ds){
       const bt=t.done?"완료":(isOver?"기한초과":"진행중");
       return '<div class="task-item '+(t.done?"done-item":"")+'">'+
         '<div class="task-item-body">'+
-          '<div class="task-item-title">📒'+escHtml(t.title)+'</div>'+
+          '<div class="task-item-title">📒'+(t.repeatIsLast?'<span style="background:#fee2e2;color:#b91c1c;font-size:11px;padding:1px 6px;border-radius:999px;font-weight:700;margin-right:4px;">⚠️ 반복 마지막</span>':(t.repeatFrom||t.repeat==='weekly_nth'?'<span style="background:#fde68a;color:#92400e;font-size:11px;padding:1px 6px;border-radius:999px;font-weight:700;margin-right:4px;">🔁 반복</span>':''))+escHtml(t.title)+'</div>'+
           '<div class="task-item-meta">'+
             ((t.startDate||t.endDate)?"&#128197; "+fmtDate(t.startDate)+" ~ "+fmtDate(t.endDate):"")+
           '</div>'+
@@ -2370,8 +2477,152 @@ document.getElementById("todayLabel").innerHTML =
   + " <span style=\"color:" + _dayColor + ";font-weight:800;\">(" + _dayName + ")</span>";
   updateNotiBanner();
   await refresh();
+  await syncRepeatTasks();
+  checkRepeatLastNotice();
   setInterval(async()=>{await refresh();checkReminders();},30000);
+  setInterval(async()=>{await syncRepeatTasks();},3600000);
 })();
+
+// ── 반복 마지막 일정 알림 ──
+function checkRepeatLastNotice() {
+  const all = lsLoad();
+  const lastItems = all.filter(t => t.repeatIsLast);
+  if (!lastItems.length) return;
+  // repeatFrom 기준 중복 제거
+  const seen = new Set();
+  const uniq = lastItems.filter(t => {
+    if (seen.has(t.repeatFrom)) return false;
+    seen.add(t.repeatFrom); return true;
+  });
+  uniq.forEach(t => {
+    toast('⚠️ [반복 마지막] "' + t.title + '" 반복 일정이 ' + t.startDate + '에 종료됩니다. 재등록해 주세요!', 7000);
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      new Notification('🔁 반복 스케줄 종료 예정', {
+        body: '"' + t.title + '" 반복 일정이 ' + t.startDate + '에 끝납니다. 재등록해 주세요!'
+      });
+    }
+  });
+}
+
+// ── 반복 옵션 토글 ──
+function toggleRepeatOptions() {
+  const v = document.getElementById('fRepeat').value;
+  document.getElementById('repeatOptions').style.display = v ? 'block' : 'none';
+}
+
+// ── N번째 요일 날짜 계산 ──
+function getNthDowOfMonth(year, month, nth, dow) {
+  if (nth === 5) {
+    const last = new Date(year, month + 1, 0).getDate();
+    for (let d = last; d >= 1; d--) {
+      if (new Date(year, month, d).getDay() === dow) return d;
+    }
+    return null;
+  }
+  let count = 0;
+  const dim = new Date(year, month + 1, 0).getDate();
+  for (let d = 1; d <= dim; d++) {
+    if (new Date(year, month, d).getDay() === dow) {
+      count++;
+      if (count === nth) return d;
+    }
+  }
+  return null;
+}
+
+// ── 해당 날짜 파트 근무 종류 반환 (기존 getShiftForDate 활용) ──
+function getPartShiftForRepeat(dateStr, partNum) {
+  if (!partNum) return '주';
+  // override 먼저 확인 (키: "날짜_파트")
+  const ovKey = dateStr + '_' + partNum;
+  if (shiftOverrides[ovKey]) return shiftOverrides[ovKey];
+  // 기본 근무표
+  return getShiftForDate(dateStr, String(partNum)) || '휴';
+}
+
+// ── 해당 날짜 파트가 반복 조건에 맞는지 확인 ──
+function isPartMatch(dateStr, partNum, shiftCond) {
+  if (!partNum) return true;
+  const shift = getPartShiftForRepeat(dateStr, partNum);
+  const isJu = shift === '주';
+  const isYa = shift === '야';
+  if (shiftCond === 'ju')   return isJu;
+  if (shiftCond === 'ya')   return isYa;
+  if (shiftCond === 'both') return isJu || isYa;
+  return isJu;
+}
+
+// ── 반복 스케줄 자동 생성 ──
+// 삭제된 반복 인스턴스 블랙리스트 (tmplId_dateStr 형태로 저장)
+function getDeletedRepeatInsts() {
+  try { return JSON.parse(localStorage.getItem('deletedRepeatInsts')||'[]'); } catch(e){ return []; }
+}
+function addDeletedRepeatInst(tmplId, dateStr) {
+  const list = getDeletedRepeatInsts();
+  const key = tmplId + '_' + dateStr;
+  if (!list.includes(key)) { list.push(key); localStorage.setItem('deletedRepeatInsts', JSON.stringify(list)); }
+}
+
+async function syncRepeatTasks() {
+  const allTasks = lsLoad();
+  const templates = allTasks.filter(t => t.repeat === 'weekly_nth');
+  if (!templates.length) return;
+
+  const deleted = getDeletedRepeatInsts();
+  const now = new Date();
+  const FUTURE_MONTHS = 12;
+  // 현재달(0) ~ +12개월만 생성 (과거는 생성 안 함)
+  const months = [];
+  for (let delta = 0; delta <= FUTURE_MONTHS; delta++) {
+    let y = now.getFullYear(), m = now.getMonth() + delta;
+    if (m > 11) { m -= 12; y++; }
+    months.push({ y, m, isLast: delta === FUTURE_MONTHS });
+  }
+
+  let changed = false;
+  for (const { y, m, isLast } of months) {
+    for (const tmpl of templates) {
+      const nth = parseInt(tmpl.repeatNth);
+      const dow = parseInt(tmpl.repeatDow);
+      const day = getNthDowOfMonth(y, m, nth, dow);
+      if (!day) continue;
+      const ds = y+'-'+String(m+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+
+      // 삭제된 인스턴스는 재생성 안 함
+      if (deleted.includes(tmpl.id + '_' + ds)) continue;
+
+      // 파트 미지정이면 항상 생성, 지정이면 근무 조건 체크
+      if (tmpl.repeatPart && !isPartMatch(ds, tmpl.repeatPart, tmpl.repeatShift||'ju')) continue;
+
+      const exists = allTasks.find(t => t.repeatFrom === tmpl.id && t.startDate === ds);
+      if (exists) {
+        // 이미 존재하면 repeatIsLast 플래그만 갱신
+        if (exists.repeatIsLast !== isLast) {
+          await idbPut({ ...exists, repeatIsLast: isLast });
+          changed = true;
+        }
+        continue;
+      }
+
+      const id = (typeof crypto !== 'undefined' && crypto.randomUUID)
+        ? crypto.randomUUID() : Date.now().toString()+Math.random().toString(36).slice(2);
+      await idbPut({
+        id, title: tmpl.title, memo: tmpl.memo || '',
+        category: tmpl.category || '',
+        startDate: ds, endDate: ds,
+        reminderAt: '', reminded: false,
+        done: false, createdAt: Date.now(),
+        imageDataUrl: null,
+        repeat: '', repeatNth: '', repeatDow: '', repeatPart: '',
+        repeatShift: '', repeatFrom: tmpl.id,
+        repeatIsLast: isLast
+      });
+      changed = true;
+    }
+  }
+  if (changed) await refresh();
+}
+
 </script>
 </body>
 </html>
