@@ -2746,5 +2746,62 @@ async function syncRepeatTasks() {
     </div>
   </div>
 </div>
+<script>
+  // 마우스 우클릭 차단
+  document.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+    return false;
+  });
+
+  // F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U 키 차단
+  document.addEventListener('keydown', function(e) {
+    // F12
+    if (e.key === 'F12') {
+      e.preventDefault();
+      return false;
+    }
+    // Ctrl+Shift+I (개발자 도구)
+    if (e.ctrlKey && e.shiftKey && e.key === 'I') {
+      e.preventDefault();
+      return false;
+    }
+    // Ctrl+Shift+J (콘솔)
+    if (e.ctrlKey && e.shiftKey && e.key === 'J') {
+      e.preventDefault();
+      return false;
+    }
+    // Ctrl+U (소스 보기)
+    if (e.ctrlKey && e.key === 'u') {
+      e.preventDefault();
+      return false;
+    }
+    // Ctrl+S (저장 차단)
+    if (e.ctrlKey && e.key === 's') {
+      e.preventDefault();
+      return false;
+    }
+  });
+
+  // 개발자 도구 열림 감지 후 경고
+  (function() {
+    const devtools = { open: false };
+    const threshold = 160;
+    setInterval(function() {
+      if (
+        window.outerWidth - window.innerWidth > threshold ||
+        window.outerHeight - window.innerHeight > threshold
+      ) {
+        if (!devtools.open) {
+          devtools.open = true;
+          alert('⚠️ 개발자 도구 사용은 허용되지 않습니다.');
+          window.location.reload();
+        }
+      } else {
+        devtools.open = false;
+      }
+    }, 500);
+  })();
+</script>
+
 </body>
 </html>
