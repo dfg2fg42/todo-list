@@ -683,6 +683,9 @@
   .month-nav-btn:hover { background:var(--accent); color:#fff; }
   .fg-month-wrap { display:flex; align-items:center; gap:4px; width:100%; }
   .fg-month-wrap select { flex:1; min-width:0; }
+  .cal-task-chip.chip-placeholder { background: transparent !important; border-color: transparent !important; pointer-events: none; visibility: hidden; }
+  .cal-task-chip.chip-cont-start { border-radius: 4px 0 0 4px; }
+  .cal-task-chip.chip-cont-end   { border-radius: 0 4px 4px 0; }
   .badge-dday { background: #fef08a; color: #713f12; font-weight:800; animation: pulse-last 1.5s infinite; }
   .badge-dday-end { background: #f97316; color: #fff; font-weight:800; animation: pulse-last 1.5s infinite; }
   .badge-repeat-last { background: #fee2e2; color: #b91c1c; animation: pulse-last 1.5s infinite; }
@@ -2184,25 +2187,12 @@ function prevMonth(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCale
 function nextMonth(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCalendar();}
 function goToday(){calYear=new Date().getFullYear();calMonth=new Date().getMonth();renderCalendar();}
 
-// 변경 후
 function getTasksForDay(ds){
-  return tasks
-    .filter(t=>{
-      const s=t.startDate||t.endDate, e=t.endDate||t.startDate;
-      if(!s&&!e) return false;
-      return ds>=s&&ds<=e;
-    })
-    .sort((a,b)=>{
-      // 1순위: 시작일 오름차순 (멀티데이 task가 먼저, 일관된 위치 유지)
-      const sa=a.startDate||a.endDate||'', sb=b.startDate||b.endDate||'';
-      if(sa!==sb) return sa.localeCompare(sb);
-      // 2순위: 기간 긴 순 (멀티데이가 위로)
-      const da=(a.startDate&&a.endDate)?Math.round((new Date(a.endDate)-new Date(a.startDate))/86400000):0;
-      const db=(b.startDate&&b.endDate)?Math.round((new Date(b.endDate)-new Date(b.startDate))/86400000):0;
-      if(db!==da) return db-da;
-      // 3순위: ID 고정 (같은 task가 항상 같은 행 유지)
-      return a.id.localeCompare(b.id);
-    });
+  return tasks.filter(t=>{
+    const s=t.startDate||t.endDate, e=t.endDate||t.startDate;
+    if(!s&&!e) return false;
+    return ds>=s&&ds<=e;
+  });
 }
 async function renderCalendar(){
   const y=calYear,m=calMonth;
@@ -2308,52 +2298,123 @@ async function renderCalendar(){
     }
     el.appendChild(cellHeader);
 
-    if(!cell.other){
-      const dt=getTasksForDay(ds);
-      dt.slice(0,3).forEach(t=>{
-        const isOver=isOverdue(t);
-        const baseColor=t.done?"chip-done":(isOver?"chip-over":"chip-todo");
-        const catIcon=getCatIcon(t.category);
-        const isStart=(!t.startDate||ds===t.startDate);
-        const isEnd=(!t.endDate||ds===t.endDate);
-        let posClass="";
-        if(isStart&&isEnd) posClass="chip-single";
-        else if(isStart)   posClass="chip-start";
-        else if(isEnd)     posClass="chip-end";
-        else               posClass="chip-mid";
-        const taskDays=(t.startDate&&t.endDate)?
-          Math.round((new Date(t.endDate+'T00:00:00')-new Date(t.startDate+'T00:00:00'))/86400000)+1:1;
-        const crossMonth = (t.startDate && t.endDate) &&
-  (t.startDate.slice(0,7) !== t.endDate.slice(0,7));  // "2026-04" ≠ "2026-05"
-
-const showEnd = (taskDays >= 7) || crossMonth;
-        const chip=document.createElement("div");
-        chip.className="cal-task-chip "+baseColor+" "+posClass;
-        const repeatPrefix = t.repeatIsLast ? '⚠️ ' : (t.repeatFrom || t.repeat==='weekly_nth') ? '🔁 ' : '';
-        if(posClass==="chip-mid"){
-          chip.textContent="\u00a0";
-          chip.classList.add("chip-hide-title");
-        } else if(posClass==="chip-end"&&showEnd){
-          chip.textContent=repeatPrefix+(catIcon?catIcon+' ':'')+t.title;
-        } else if(posClass==="chip-end"){
-          chip.textContent="\u00a0";
-          chip.classList.add("chip-hide-title");
-        } else {
-          chip.textContent=repeatPrefix+(catIcon?catIcon+' ':'')+t.title;
-        }
-        chip.title=t.title+(t.category?' ['+t.category+']':'');
-        chip.dataset.taskId=t.id;
-        chip.onclick=e=>{e.stopPropagation();openDayModal(ds);};
-        el.appendChild(chip);
-      });
-      if(dt.length>3){
-        const more=document.createElement("div");
-        more.className="cal-more"; more.textContent="+"+(dt.length-3)+"개 더";
-        el.appendChild(more);
-      }
-    }
+    // 셀 요소만 grid에 추가 (chip은 슬롯 배치 후 삽입)
+    el.dataset.dateStr = ds;
     grid.appendChild(el);
   });
+
+  // ── 슬롯 배치 알고리즘 ──
+  const MAX_SLOTS = 3; // 셀당 최대 표시 슬롯 수
+  const weekCount = Math.ceil(cells.length / 7);
+
+  for (let w = 0; w < weekCount; w++) {
+    const weekCells = cells.slice(w * 7, w * 7 + 7);
+    const weekDates = weekCells.map(c => makeDateStr(c.y, c.m, c.d));
+
+    // 이 주에 걸친 task 수집 (시작일 기준 정렬)
+    const weekTasks = [];
+    tasks.forEach(t => {
+      if (t.repeat === 'weekly_nth') return;
+      const s = t.startDate || t.endDate, e = t.endDate || t.startDate;
+      if (!s) return;
+      if (e < weekDates[0] || s > weekDates[6]) return;
+      weekTasks.push(t);
+    });
+    // 멀티데이 먼저, 시작일 빠른 순, 같으면 ID 고정
+    weekTasks.sort((a, b) => {
+      const da = (a.startDate && a.endDate) ? Math.round((new Date(a.endDate) - new Date(a.startDate)) / 86400000) : 0;
+      const db = (b.startDate && b.endDate) ? Math.round((new Date(b.endDate) - new Date(b.startDate)) / 86400000) : 0;
+      if (db !== da) return db - da;
+      const sa = a.startDate || a.endDate || '', sb = b.startDate || b.endDate || '';
+      if (sa !== sb) return sa.localeCompare(sb);
+      return a.id.localeCompare(b.id);
+    });
+
+    // 슬롯 배정
+    const slotMap = {}; // taskId → slotIndex
+    const slotUsed = Array(MAX_SLOTS).fill(null); // slotIndex → taskId or null
+    weekTasks.forEach(t => {
+      // 이미 배정된 슬롯 있으면 재사용
+      let slot = -1;
+      for (let s = 0; s < MAX_SLOTS; s++) {
+        if (slotUsed[s] === null) { slot = s; slotUsed[s] = t.id; break; }
+      }
+      if (slot === -1) slot = MAX_SLOTS; // 초과 → +N개 더
+      slotMap[t.id] = slot;
+    });
+
+    // 셀별 chip 삽입
+    weekDates.forEach((ds, di) => {
+      const cell = weekCells[di];
+      if (cell.other) return;
+      const elCell = grid.querySelector('[data-date-str="' + ds + '"]');
+      if (!elCell) return;
+
+      // 이 날짜에 해당하는 task들 슬롯별로 배치
+      const dayTasks = weekTasks.filter(t => {
+        const s = t.startDate || t.endDate, e = t.endDate || t.startDate;
+        return ds >= s && ds <= e;
+      });
+      const overCount = dayTasks.filter(t => (slotMap[t.id] ?? MAX_SLOTS) >= MAX_SLOTS).length;
+
+      for (let slot = 0; slot < MAX_SLOTS; slot++) {
+        const t = dayTasks.find(t => slotMap[t.id] === slot);
+        if (!t) {
+          // 빈 슬롯 → placeholder
+          const ph = document.createElement('div');
+          ph.className = 'cal-task-chip chip-placeholder';
+          ph.textContent = '\u00a0';
+          elCell.appendChild(ph);
+          continue;
+        }
+        const isOver = isOverdue(t);
+        const baseColor = t.done ? 'chip-done' : (isOver ? 'chip-over' : 'chip-todo');
+        const catIcon = getCatIcon(t.category);
+        const isStart = ds === (t.startDate || t.endDate);
+        const isEnd   = ds === (t.endDate   || t.startDate);
+        const isWeekStart = di === 0;
+        const isWeekEnd   = di === 6;
+        let posClass = '';
+        if (isStart && isEnd)         posClass = 'chip-single';
+        else if (isStart || isWeekStart) posClass = isStart ? 'chip-start' : 'chip-cont-start';
+        if (isEnd && !isStart)        posClass = isEnd ? 'chip-end' : posClass;
+        if (!isStart && !isEnd && !isWeekStart) posClass = 'chip-mid';
+        if (isWeekStart && !isStart)  posClass = 'chip-cont-start';
+        if (isWeekEnd   && !isEnd)    posClass = 'chip-cont-end';
+
+        const taskDays = (t.startDate && t.endDate) ?
+          Math.round((new Date(t.endDate + 'T00:00:00') - new Date(t.startDate + 'T00:00:00')) / 86400000) + 1 : 1;
+        const crossMonth = (t.startDate && t.endDate) && (t.startDate.slice(0, 7) !== t.endDate.slice(0, 7));
+        const showEnd = (taskDays >= 7) || crossMonth;
+
+        const chip = document.createElement('div');
+        chip.className = 'cal-task-chip ' + baseColor + ' ' + posClass;
+        const repeatPrefix = t.repeatIsLast ? '⚠️ ' : (t.repeatFrom || t.repeat === 'weekly_nth') ? '🔁 ' : '';
+
+        if (posClass === 'chip-mid' || posClass === 'chip-cont-end') {
+          chip.textContent = '\u00a0';
+          chip.classList.add('chip-hide-title');
+        } else if (posClass === 'chip-end' && !showEnd) {
+          chip.textContent = '\u00a0';
+          chip.classList.add('chip-hide-title');
+        } else {
+          chip.textContent = repeatPrefix + (catIcon ? catIcon + ' ' : '') + t.title;
+        }
+        chip.title = t.title + (t.category ? ' [' + t.category + ']' : '');
+        chip.dataset.taskId = t.id;
+        chip.onclick = e => { e.stopPropagation(); openDayModal(ds); };
+        elCell.appendChild(chip);
+      }
+
+      // +N개 더
+      if (overCount > 0) {
+        const more = document.createElement('div');
+        more.className = 'cal-more';
+        more.textContent = '+' + overCount + '개 더';
+        elCell.appendChild(more);
+      }
+    }); // weekDates.forEach
+  } // for w (week loop)
 
   // 같은 task 칩 전체 동시 hover
   grid.addEventListener('mouseover', function(e){
