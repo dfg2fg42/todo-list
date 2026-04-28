@@ -2184,12 +2184,25 @@ function prevMonth(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCale
 function nextMonth(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCalendar();}
 function goToday(){calYear=new Date().getFullYear();calMonth=new Date().getMonth();renderCalendar();}
 
+// 변경 후
 function getTasksForDay(ds){
-  return tasks.filter(t=>{
-    const s=t.startDate||t.endDate, e=t.endDate||t.startDate;
-    if(!s&&!e) return false;
-    return ds>=s&&ds<=e;
-  });
+  return tasks
+    .filter(t=>{
+      const s=t.startDate||t.endDate, e=t.endDate||t.startDate;
+      if(!s&&!e) return false;
+      return ds>=s&&ds<=e;
+    })
+    .sort((a,b)=>{
+      // 1순위: 시작일 오름차순 (멀티데이 task가 먼저, 일관된 위치 유지)
+      const sa=a.startDate||a.endDate||'', sb=b.startDate||b.endDate||'';
+      if(sa!==sb) return sa.localeCompare(sb);
+      // 2순위: 기간 긴 순 (멀티데이가 위로)
+      const da=(a.startDate&&a.endDate)?Math.round((new Date(a.endDate)-new Date(a.startDate))/86400000):0;
+      const db=(b.startDate&&b.endDate)?Math.round((new Date(b.endDate)-new Date(b.startDate))/86400000):0;
+      if(db!==da) return db-da;
+      // 3순위: ID 고정 (같은 task가 항상 같은 행 유지)
+      return a.id.localeCompare(b.id);
+    });
 }
 async function renderCalendar(){
   const y=calYear,m=calMonth;
