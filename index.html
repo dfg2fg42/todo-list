@@ -311,6 +311,11 @@
     .cal-more { font-size: 10px; color: var(--text-muted); font-weight: 600; margin-top: 2px; }
     .cal-cell-header { height: 16px; overflow: hidden; margin-bottom: 2px; }
 
+    /* ── 사내 기념일 ── */
+    .cal-holiday.is-custom { color: #1d4ed8 !important; }
+    .cal-cell.is-custom-holiday .cal-day-num { color: #1d4ed8 !important; }
+    .cal-cell.today.is-custom-holiday .cal-day-num { background: #1d4ed8; color: #fff !important; }
+
     /* ── 공휴일 ── */
     .cal-holiday {
       font-size: 9px; font-weight: 700; color: #dc2626;
@@ -2062,8 +2067,17 @@ async function fetchHolidaysForYear(year) {
   }
 }
 
+// 매년 반복 사내 기념일 (MM-DD 형식)
+const CUSTOM_ANNUAL_HOLIDAYS = {
+  '06-01': '노사 상생의 날',
+  '07-11': '창립기념일'
+};
+
 function getHoliday(ds) {
   const year = ds.substring(0,4);
+  const mmdd = ds.substring(5); // MM-DD
+  // 사내 기념일 우선 체크
+  if(CUSTOM_ANNUAL_HOLIDAYS[mmdd]) return CUSTOM_ANNUAL_HOLIDAYS[mmdd];
   if(!holidayCache[year]) return null;
   return holidayCache[year][ds] || null;
 }
@@ -2237,8 +2251,10 @@ async function renderCalendar(){
     if(!cell.other&&ds===today) cls+=" today";
     if(dow===0) cls+=" dow-sun";
     if(dow===6) cls+=" dow-sat";
-    if(holiday && !isSub) cls+=" is-holiday";
-    if(holiday && isSub) cls+=" is-substitute-holiday";
+    const isCustom = holiday ? !!(CUSTOM_ANNUAL_HOLIDAYS[ds.substring(5)]) : false;
+    if(holiday && isCustom) cls+=" is-custom-holiday";
+    else if(holiday && !isSub) cls+=" is-holiday";
+    else if(holiday && isSub) cls+=" is-substitute-holiday";
     // 선택 날짜 강조
     if(calSelStart && calSelEnd && !cell.other) {
       const sStart = calSelStart <= calSelEnd ? calSelStart : calSelEnd;
@@ -2292,7 +2308,7 @@ async function renderCalendar(){
     cellHeader.className="cal-cell-header";
     if(!cell.other && holiday){
       const hd=document.createElement("span");
-      hd.className="cal-holiday" + (isSub ? " is-substitute" : "");
+      hd.className="cal-holiday" + (isCustom ? " is-custom" : isSub ? " is-substitute" : "");
       hd.textContent=holiday; hd.title=holiday;
       cellHeader.appendChild(hd);
     }
