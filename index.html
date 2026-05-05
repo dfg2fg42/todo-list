@@ -21,6 +21,31 @@
       --shadow: 0 1px 4px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06);
       --radius: 14px;
     }
+    /* ── 다크모드 ── */
+    body.dark-mode {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface2: #273549;
+      --border: #334155;
+      --accent: #6381f5;
+      --accent-hover: #4f6ef0;
+      --danger: #f87171;
+      --danger-hover: #ef4444;
+      --success: #4ade80;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --shadow: 0 1px 4px rgba(0,0,0,0.3), 0 4px 16px rgba(0,0,0,0.25);
+    }
+    /* 다크모드 테마 전환 버튼 */
+    .btn-theme {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 6px 12px; border-radius: 8px; border: 1.5px solid var(--border);
+      background: var(--surface2); color: var(--text);
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: background .2s, color .2s, border-color .2s;
+      white-space: nowrap;
+    }
+    .btn-theme:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
     body {
       background: var(--bg);
       color: var(--text);
@@ -722,6 +747,7 @@
   </div>
 </div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
+      <button class="btn-theme" id="themeToggleBtn" onclick="toggleTheme()">🌙 다크</button>
       <button class="btn btn-ghost btn-sm" onclick="requestNoti()">&#128276; 알림 권한 요청</button>
       <button class="btn btn-backup btn-sm" onclick="backupData()">&#128229; 백업</button>
       <label class="btn btn-restore btn-sm" style="cursor:pointer;margin:0;">
@@ -2722,6 +2748,27 @@ async function confirmRepeatDelete(mode) {
     else closeDayModal();
   }
 }
+
+// ── 라이트/다크 테마 전환 ──
+function applyTheme(isDark) {
+  if (isDark) {
+    document.body.classList.add('dark-mode');
+    document.getElementById('themeToggleBtn').innerHTML = '☀️ 라이트';
+  } else {
+    document.body.classList.remove('dark-mode');
+    document.getElementById('themeToggleBtn').innerHTML = '🌙 다크';
+  }
+}
+function toggleTheme() {
+  const isDark = !document.body.classList.contains('dark-mode');
+  localStorage.setItem('themeMode', isDark ? 'dark' : 'light');
+  applyTheme(isDark);
+}
+// 저장된 테마 적용 (페이지 로드 시)
+(function initTheme() {
+  const saved = localStorage.getItem('themeMode');
+  applyTheme(saved === 'dark');
+})();
 
 // ── 목록 월 이동 ──
 function listMonthNav(dir) {
