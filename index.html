@@ -716,8 +716,9 @@
   .cal-task-chip.chip-placeholder { background: transparent !important; border-color: transparent !important; pointer-events: none; visibility: hidden; }
   .cal-task-chip.chip-cont-start { border-radius: 4px 0 0 4px; }
   .cal-task-chip.chip-cont-end   { border-radius: 0 4px 4px 0; }
-  .badge-dday { background: #fef08a; color: #713f12; font-weight:800; animation: pulse-last 1.5s infinite; }
-  .badge-dday-end { background: #f97316; color: #fff; font-weight:800; animation: pulse-last 1.5s infinite; }
+  .badge-dday     { background: #fef08a; color: #713f12; font-weight:800; animation: pulse-last 1.5s infinite; }
+  .badge-dday-end { background: #f97316; color: #fff;    font-weight:800; animation: pulse-last 1.5s infinite; }
+  .badge-dday-1   { background: #bfdbfe; color: #1e40af; font-weight:800; }
   .badge-repeat-last { background: #fee2e2; color: #b91c1c; animation: pulse-last 1.5s infinite; }
   @keyframes pulse-last { 0%,100%{opacity:1;} 50%{opacity:0.55;} }
 
@@ -1634,17 +1635,31 @@ function checkReminders(){
 }
 
 // D-day 알림: 앱 시작(새로고침) 시마다 호출
+function tomorrowStr(){
+  const d=new Date(); d.setDate(d.getDate()+1);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
 function checkDday(){
   if(!("Notification" in window)||Notification.permission!=="granted") return;
   const today=todayStr();
+  const tomorrow=tomorrowStr();
   tasks.forEach(t=>{
     if(!t.done && !t.repeat){
-      const isStart = t.startDate && t.startDate===today;
-      const isEnd   = t.endDate   && t.endDate===today;
+      const isEnd      = t.endDate   && t.endDate===today;
+      const isStart    = t.startDate && t.startDate===today;
+      const isEndMinus1= t.endDate   && t.endDate===tomorrow;
+      const isStartMinus1 = t.startDate && t.startDate===tomorrow && t.startDate!==t.endDate;
+      // D-Day 알림
       if(isStart||isEnd){
         const label = (t.startDate===t.endDate||!t.endDate) ? 'D-Day' : (isEnd ? '📅 종료 D-Day' : '📅 시작 D-Day');
         try{ new Notification('🔔 ' + label, {body: t.title}); }catch(e){}
         toast('🔔 ' + label + ': ' + t.title, 5000);
+      }
+      // D-1 알림
+      if(!isStart&&!isEnd&&(isEndMinus1||isStartMinus1)){
+        const label2 = isEndMinus1 ? '📅 종료 D-1' : '📅 시작 D-1';
+        try{ new Notification('🔔 ' + label2, {body: t.title}); }catch(e){}
+        toast('🔔 ' + label2 + ': ' + t.title, 5000);
       }
     }
   });
@@ -2018,6 +2033,8 @@ function render(filtered){
       (t.repeatIsLast?'<span class="badge badge-repeat-last" title="마지막 반복 일정입니다. 재등록 필요!">⚠️ 반복 마지막</span>':'')+
       (!t.done&&!t.repeat&&t.endDate&&t.endDate===todayStr()?'<span class="badge badge-dday-end">🔔 D-Day</span>':'') +
       (!t.done&&!t.repeat&&t.startDate&&t.startDate===todayStr()&&t.startDate!==t.endDate?'<span class="badge badge-dday">📅 시작 D-Day</span>':'') +
+      (!t.done&&!t.repeat&&t.endDate&&t.endDate===tomorrowStr()&&t.endDate!==todayStr()?'<span class="badge badge-dday-1">📅 D-1</span>':'') +
+      (!t.done&&!t.repeat&&t.startDate&&t.startDate===tomorrowStr()&&t.startDate!==t.endDate?'<span class="badge badge-dday-1">📅 시작 D-1</span>':'') +
       '<span class="badge '+sCls+'">'+sTxt+'</span>'+
       '</div>';
     list.appendChild(div);
