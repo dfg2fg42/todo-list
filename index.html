@@ -1911,6 +1911,35 @@ function getCatIcon(cat) {
   return m[cat] || '';
 }
 
+const SHIFT_PATTERN = ['주','주','휴','휴','야','야','휴','휴'];
+const SHIFT_ANCHOR = new Date('2026-03-26T00:00:00');
+const SHIFT_OFFSETS = {'1':4, '2':2, '3':0, '4':6};
+
+function getShiftForDate(ds, part) {
+  if(!part) return null;
+  const date = new Date(ds + 'T00:00:00');
+  const anchor = SHIFT_ANCHOR;
+  const diff = Math.round((date - anchor) / 86400000);
+  const offset = SHIFT_OFFSETS[part] || 0;
+  const idx = ((diff + offset) % 8 + 8) % 8;
+  return SHIFT_PATTERN[idx];
+}
+
+function shiftBadgeHtml(shift, isOverride=false) {
+  if(!shift) return '';
+  const ov = isOverride ? ' shift-override' : '';
+  if(shift === '주')   return '<span class="shift-badge shift-ju'+ov+'">주</span>';
+  if(shift === '야')   return '<span class="shift-badge shift-ya'+ov+'">야</span>';
+  if(shift === '휴')   return '<span class="shift-badge shift-hyu'+ov+'">휴</span>';
+  if(shift === '대근') return '<span class="shift-badge shift-dae'+ov+'">대</span>';  /* 하위호환 */
+  if(shift === '주대') return '<span class="shift-badge shift-judae'+ov+'">주대</span>';
+  if(shift === '야대') return '<span class="shift-badge shift-yadae'+ov+'">야대</span>';
+  if(shift === '연장') return '<span class="shift-badge shift-yeon'+ov+'">연장</span>';
+  if(shift === '연차') return '<span class="shift-badge shift-yeoncha'+ov+'">연차</span>';
+  if(shift === '공휴') return '<span class="shift-badge shift-gonghu">공휴</span>';
+  return '';
+}
+
 function render(filtered){
   const list=document.getElementById("taskList");
   list.innerHTML="";
@@ -1956,7 +1985,11 @@ function render(filtered){
     const sCls=t.done?"badge-done":(isOver?"badge-over":"badge-todo");
     const sTxt=t.done?"완료":(isOver?"기한초과":"진행중");
     const imgHtml=t.imageDataUrl?'<img class="task-thumb" src="'+t.imageDataUrl+'" onclick="openLightbox(this.src)" title="클릭하면 크게 보기" />':"";
-    const period=(t.startDate||t.endDate)?'<span class="meta-tag period">&#128197; '+fmtDate(t.startDate)+' ~ '+fmtDate(t.endDate)+'</span>':"";
+    const _shiftDs = t.startDate || t.endDate;
+    const _shiftOv = _shiftDs ? (shiftOverrides[_shiftDs+'_1'] || null) : null;
+    const _shiftVal = _shiftDs ? (_shiftOv || getShiftForDate(_shiftDs, '1')) : null;
+    const _shiftBadge = _shiftVal ? shiftBadgeHtml(_shiftVal, !!_shiftOv) : '';
+    const period=(t.startDate||t.endDate)?'<span class="meta-tag period">&#128197; '+fmtDate(t.startDate)+' ~ '+fmtDate(t.endDate)+'</span>'+(_shiftBadge?' '+_shiftBadge:''):"";
     const rem=t.reminderAt?'<span class="meta-tag rem">&#9200; '+t.reminderAt.replace("T"," ")+'</span>':"";
     const memoHtml=t.memo?'<div class="task-memo">'+escHtml(t.memo)+'</div>':"";
     const chk1=selectedIds.has(t.id)?"checked":"";
@@ -2109,34 +2142,7 @@ function getHoliday(ds) {
 }
 
 /* ── Shift Pattern ── */
-const SHIFT_PATTERN = ['주','주','휴','휴','야','야','휴','휴'];
-const SHIFT_ANCHOR = new Date('2026-03-26T00:00:00');
-const SHIFT_OFFSETS = {'1':4, '2':2, '3':0, '4':6};
 
-function getShiftForDate(ds, part) {
-  if(!part) return null;
-  const date = new Date(ds + 'T00:00:00');
-  const anchor = SHIFT_ANCHOR;
-  const diff = Math.round((date - anchor) / 86400000);
-  const offset = SHIFT_OFFSETS[part] || 0;
-  const idx = ((diff + offset) % 8 + 8) % 8;
-  return SHIFT_PATTERN[idx];
-}
-
-function shiftBadgeHtml(shift, isOverride=false) {
-  if(!shift) return '';
-  const ov = isOverride ? ' shift-override' : '';
-  if(shift === '주')   return '<span class="shift-badge shift-ju'+ov+'">주</span>';
-  if(shift === '야')   return '<span class="shift-badge shift-ya'+ov+'">야</span>';
-  if(shift === '휴')   return '<span class="shift-badge shift-hyu'+ov+'">휴</span>';
-  if(shift === '대근') return '<span class="shift-badge shift-dae'+ov+'">대</span>';  /* 하위호환 */
-  if(shift === '주대') return '<span class="shift-badge shift-judae'+ov+'">주대</span>';
-  if(shift === '야대') return '<span class="shift-badge shift-yadae'+ov+'">야대</span>';
-  if(shift === '연장') return '<span class="shift-badge shift-yeon'+ov+'">연장</span>';
-  if(shift === '연차') return '<span class="shift-badge shift-yeoncha'+ov+'">연차</span>';
-  if(shift === '공휴') return '<span class="shift-badge shift-gonghu">공휴</span>';
-  return '';
-}
 
 /* ── Calendar ── */
 // 날짜 선택 상태
@@ -2551,7 +2557,16 @@ function openDayModal(ds){
         '<div class="task-item-body">'+
           '<div class="task-item-title">📒'+(t.repeatIsLast?'<span style="background:#fee2e2;color:#b91c1c;font-size:11px;padding:1px 6px;border-radius:999px;font-weight:700;margin-right:4px;">⚠️ 반복 마지막</span>':(t.repeatFrom||t.repeat==='weekly_nth'?'<span style="background:#fde68a;color:#92400e;font-size:11px;padding:1px 6px;border-radius:999px;font-weight:700;margin-right:4px;">🔁 반복</span>':''))+escHtml(t.title)+'</div>'+
           '<div class="task-item-meta">'+
-            ((t.startDate||t.endDate)?"&#128197; "+fmtDate(t.startDate)+" ~ "+fmtDate(t.endDate):"")+
+            (()=>{
+              const _ds = t.startDate || t.endDate;
+              if(!_ds) return '';
+              const _dateStr = "&#128197; "+fmtDate(t.startDate)+" ~ "+fmtDate(t.endDate);
+              // 1파트 기준 근무 표시 (shiftOverride 반영)
+              const _ov = shiftOverrides[_ds+'_1'] || null;
+              const _shift = _ov || getShiftForDate(_ds, '1');
+              const _shiftHtml = _shift ? shiftBadgeHtml(_shift, !!_ov) : '';
+              return _dateStr + (_shiftHtml ? ' &nbsp;'+_shiftHtml : '');
+            })()+
           '</div>'+
           (t.memo?'<div class="task-item-memo">&#128221; '+escHtml(t.memo)+'</div>':'')+
         '</div>'+
