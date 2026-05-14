@@ -39,9 +39,9 @@
     /* 다크모드 테마 전환 버튼 */
     .btn-theme {
       display: inline-flex; align-items: center; gap: 5px;
-      padding: 6px 12px; border-radius: 8px; border: 1.5px solid var(--border);
+      padding: 5px 11px; border-radius: 7px; border: 1px solid var(--border);
       background: var(--surface2); color: var(--text);
-      font-size: 13px; font-weight: 600; cursor: pointer;
+      font-size: 12px; font-weight: 600; line-height: 1.2; font-family: inherit; cursor: pointer;
       transition: background .2s, color .2s, border-color .2s;
       white-space: nowrap;
     }
@@ -548,8 +548,25 @@
 }
     .dp-day {
       aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 1px; position: relative;
       border-radius: 50%; font-size: 13px; font-weight: 600;
       cursor: pointer; transition: all .14s; color: var(--text);
+    }
+    .dp-day-num { line-height: 1; }
+    .dp-day-shift {
+      min-height: 12px; line-height: 1; display: inline-flex;
+      align-items: center; justify-content: center;
+    }
+    .dp-day-shift .shift-badge {
+      font-size: 8px; line-height: 1.2; padding: 0 3px;
+      border-radius: 3px; letter-spacing: 0; cursor: inherit;
+      pointer-events: none;
+    }
+    .dp-day.drp-in-range .dp-day-shift .shift-badge,
+    .dp-day.drp-start .dp-day-shift .shift-badge,
+    .dp-day.drp-end .dp-day-shift .shift-badge,
+    .dp-day.dp-selected .dp-day-shift .shift-badge {
+      box-shadow: 0 0 0 1px rgba(255,255,255,.65);
     }
     .dp-day:hover { background: var(--surface2); }
     .dp-day.other-m { color: #ccc; pointer-events: none; }
@@ -624,6 +641,7 @@
 .badge-cat-2 { background: #dcfce7; color: #15803d; }  /* 정비 */
 .badge-cat-3 { background: #fef9c3; color: #a16207; }  /* 안전 및 훈련 */
 .badge-cat-4 { background: #f3e8ff; color: #7e22ce; }  /* 기타 */
+.badge-cat-5 { background: #e0f2fe; color: #0369a1; }  /* 교육 */
 
 .cat-filter-wrap { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
 .cat-filter-btn {
@@ -716,9 +734,8 @@
   .cal-task-chip.chip-placeholder { background: transparent !important; border-color: transparent !important; pointer-events: none; visibility: hidden; }
   .cal-task-chip.chip-cont-start { border-radius: 4px 0 0 4px; }
   .cal-task-chip.chip-cont-end   { border-radius: 0 4px 4px 0; }
-  .badge-dday     { background: #fef08a; color: #713f12; font-weight:800; animation: pulse-last 1.5s infinite; }
-  .badge-dday-end { background: #f97316; color: #fff;    font-weight:800; animation: pulse-last 1.5s infinite; }
-  .badge-dday-1   { background: #bfdbfe; color: #1e40af; font-weight:800; }
+  .badge-dday { background: #fef08a; color: #713f12; font-weight:800; animation: pulse-last 1.5s infinite; }
+  .badge-dday-end { background: #f97316; color: #fff; font-weight:800; animation: pulse-last 1.5s infinite; }
   .badge-repeat-last { background: #fee2e2; color: #b91c1c; animation: pulse-last 1.5s infinite; }
   @keyframes pulse-last { 0%,100%{opacity:1;} 50%{opacity:0.55;} }
 
@@ -779,6 +796,7 @@
     <option value="기동/정지">🚥 기동/정지</option>
     <option value="정비">🛠️ 정비</option>
     <option value="안전 및 훈련">👷‍♂️ 안전 및 훈련</option>
+    <option value="교육">🎓 교육</option>
     <option value="기타">🎸 기타</option>
   </select>
 </div>
@@ -964,6 +982,7 @@
   <button class="cat-filter-btn" onclick="setCatFilter('기동/정지')" id="cat1">🚥기동/정지</button>
   <button class="cat-filter-btn" onclick="setCatFilter('정비')" id="cat2">🛠️정비</button>
   <button class="cat-filter-btn" onclick="setCatFilter('안전 및 훈련')" id="cat3">👷‍♂️안전 및 훈련</button>
+  <button class="cat-filter-btn" onclick="setCatFilter('교육')" id="cat5">🎓교육</button>
   <button class="cat-filter-btn" onclick="setCatFilter('기타')" id="cat4">🎸기타</button>
 </div>
 
@@ -1235,6 +1254,25 @@ function drpRender() {
   drpBuildGrid();
 }
 
+function getPickerShiftPart() {
+  const repeatBox = document.getElementById('repeatOptions');
+  const repeatPart = document.getElementById('fRepeatPart');
+  if(repeatBox && repeatPart && repeatBox.style.display !== 'none' && repeatPart.value) {
+    return repeatPart.value;
+  }
+  const calPart = document.getElementById('calPartSelect');
+  return (calPart && calPart.value) ? calPart.value : '1';
+}
+
+function pickerShiftHtml(ds) {
+  const part = getPickerShiftPart();
+  if(!part) return '';
+  const override = shiftOverrides[ds + '_' + part] || null;
+  const shift = override || getShiftForDate(ds, part);
+  if(!shift) return '';
+  return '<span class="dp-day-shift">' + shiftBadgeHtml(shift, !!override) + '</span>';
+}
+
 function drpBuildGrid() {
   const y=_drpYear, m=_drpMonth;
   const firstDow=new Date(y,m,1).getDay();
@@ -1243,7 +1281,7 @@ function drpBuildGrid() {
   const today=todayStr();
   const effEnd=(_drpStep==='end'&&_drpHover&&_drpStart&&_drpHover>=_drpStart)?_drpHover:_drpEnd;
   let html='';
-  for(let i=firstDow-1;i>=0;i--) html+=`<div class="dp-day other-m">${dipm-i}</div>`;
+  for(let i=firstDow-1;i>=0;i--) html+=`<div class="dp-day other-m"><span class="dp-day-num">${dipm-i}</span></div>`;
   for(let d=1;d<=dim;d++) {
     const ds=makeDateStr(y,m,d);
     const dow=new Date(ds+'T00:00:00').getDay();
@@ -1254,11 +1292,11 @@ function drpBuildGrid() {
     if(ds===_drpStart) cls+=' drp-start';
     if(effEnd && ds===effEnd && ds>_drpStart) cls+=' drp-end';
     if(_drpStart && effEnd && ds>_drpStart && ds<effEnd) cls+=' drp-in-range';
-    html+=`<div class="${cls}" data-date="${ds}">${d}</div>`;
+    html+=`<div class="${cls}" data-date="${ds}"><span class="dp-day-num">${d}</span>${pickerShiftHtml(ds)}</div>`;
   }
   const total=firstDow+dim;
   const remain=total%7===0?0:7-(total%7);
-  for(let d=1;d<=remain;d++) html+=`<div class="dp-day other-m">${d}</div>`;
+  for(let d=1;d<=remain;d++) html+=`<div class="dp-day other-m"><span class="dp-day-num">${d}</span></div>`;
   document.getElementById('drpDayGrid').innerHTML=html;
 }
 
@@ -1423,7 +1461,7 @@ function dpBuildDayGrid() {
 
   // 이전달
   for(let i = firstDow-1; i >= 0; i--) {
-    html += `<div class="dp-day other-m">${dipm-i}</div>`;
+    html += `<div class="dp-day other-m"><span class="dp-day-num">${dipm-i}</span></div>`;
   }
   // 이번달
   for(let d = 1; d <= dim; d++) {
@@ -1435,13 +1473,13 @@ function dpBuildDayGrid() {
     if(ds === _dpSelected) cls += ' dp-selected';
     else if(dow === 0 || hol) cls += ' dp-sunday';
     else if(dow === 6)    cls += ' dp-saturday';
-    html += `<div class="${cls}" onclick="dpSelectDay('${ds}')">${d}</div>`;
+    html += `<div class="${cls}" onclick="dpSelectDay('${ds}')"><span class="dp-day-num">${d}</span>${pickerShiftHtml(ds)}</div>`;
   }
   // 다음달
   const total = firstDow + dim;
   const remain = total % 7 === 0 ? 0 : 7 - (total % 7);
   for(let d = 1; d <= remain; d++) {
-    html += `<div class="dp-day other-m">${d}</div>`;
+    html += `<div class="dp-day other-m"><span class="dp-day-num">${d}</span></div>`;
   }
   html += '</div></div>';
   return html;
@@ -1635,31 +1673,17 @@ function checkReminders(){
 }
 
 // D-day 알림: 앱 시작(새로고침) 시마다 호출
-function tomorrowStr(){
-  const d=new Date(); d.setDate(d.getDate()+1);
-  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-}
 function checkDday(){
   if(!("Notification" in window)||Notification.permission!=="granted") return;
   const today=todayStr();
-  const tomorrow=tomorrowStr();
   tasks.forEach(t=>{
     if(!t.done && !t.repeat){
-      const isEnd      = t.endDate   && t.endDate===today;
-      const isStart    = t.startDate && t.startDate===today;
-      const isEndMinus1= t.endDate   && t.endDate===tomorrow;
-      const isStartMinus1 = t.startDate && t.startDate===tomorrow && t.startDate!==t.endDate;
-      // D-Day 알림
+      const isStart = t.startDate && t.startDate===today;
+      const isEnd   = t.endDate   && t.endDate===today;
       if(isStart||isEnd){
         const label = (t.startDate===t.endDate||!t.endDate) ? 'D-Day' : (isEnd ? '📅 종료 D-Day' : '📅 시작 D-Day');
         try{ new Notification('🔔 ' + label, {body: t.title}); }catch(e){}
         toast('🔔 ' + label + ': ' + t.title, 5000);
-      }
-      // D-1 알림
-      if(!isStart&&!isEnd&&(isEndMinus1||isStartMinus1)){
-        const label2 = isEndMinus1 ? '📅 종료 D-1' : '📅 시작 D-1';
-        try{ new Notification('🔔 ' + label2, {body: t.title}); }catch(e){}
-        toast('🔔 ' + label2 + ': ' + t.title, 5000);
       }
     }
   });
@@ -1922,7 +1946,7 @@ async function bulkDelete(){
 }
 
 function getCatIcon(cat) {
-  const m = {'기동/정지':'🚥','정비':'🛠️','안전 및 훈련':'👷','기타':'🎸'};
+  const m = {'기동/정지':'🚥','정비':'🛠️','안전 및 훈련':'👷','교육':'🎓','기타':'🎸'};
   return m[cat] || '';
 }
 
@@ -2033,8 +2057,6 @@ function render(filtered){
       (t.repeatIsLast?'<span class="badge badge-repeat-last" title="마지막 반복 일정입니다. 재등록 필요!">⚠️ 반복 마지막</span>':'')+
       (!t.done&&!t.repeat&&t.endDate&&t.endDate===todayStr()?'<span class="badge badge-dday-end">🔔 D-Day</span>':'') +
       (!t.done&&!t.repeat&&t.startDate&&t.startDate===todayStr()&&t.startDate!==t.endDate?'<span class="badge badge-dday">📅 시작 D-Day</span>':'') +
-      (!t.done&&!t.repeat&&t.endDate&&t.endDate===tomorrowStr()&&t.endDate!==todayStr()?'<span class="badge badge-dday-1">📅 D-1</span>':'') +
-      (!t.done&&!t.repeat&&t.startDate&&t.startDate===tomorrowStr()&&t.startDate!==t.endDate?'<span class="badge badge-dday-1">📅 시작 D-1</span>':'') +
       '<span class="badge '+sCls+'">'+sTxt+'</span>'+
       '</div>';
     list.appendChild(div);
@@ -2170,7 +2192,7 @@ let activeCatFilter = '';
 function setCatFilter(cat) {
   activeCatFilter = cat;
   document.querySelectorAll('.cat-filter-btn').forEach(b => b.classList.remove('active'));
-  const map = {'':'catAll','기동/정지':'cat1','정비':'cat2','안전 및 훈련':'cat3','기타':'cat4'};
+  const map = {'':'catAll','기동/정지':'cat1','정비':'cat2','안전 및 훈련':'cat3','교육':'cat5','기타':'cat4'};
   const el = document.getElementById(map[cat]);
   if(el) el.classList.add('active');
   filterList();
