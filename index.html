@@ -2512,19 +2512,13 @@ async function renderCalendar(){
         if (isWeekStart && !isStart)  posClass = 'chip-cont-start';
         if (isWeekEnd   && !isEnd)    posClass = 'chip-cont-end';
 
-        const taskDays = (t.startDate && t.endDate) ?
-          Math.round((new Date(t.endDate + 'T00:00:00') - new Date(t.startDate + 'T00:00:00')) / 86400000) + 1 : 1;
-        const crossMonth = (t.startDate && t.endDate) && (t.startDate.slice(0, 7) !== t.endDate.slice(0, 7));
-        const showEnd = (taskDays >= 7) || crossMonth;
+        const showTitle = isStart || isEnd;
 
         const chip = document.createElement('div');
         chip.className = 'cal-task-chip ' + baseColor + ' ' + posClass;
         const repeatPrefix = t.repeatIsLast ? '⚠️ ' : (t.repeatFrom || t.repeat === 'weekly_nth') ? '🔁 ' : '';
 
-        if (posClass === 'chip-mid' || posClass === 'chip-cont-end') {
-          chip.textContent = '\u00a0';
-          chip.classList.add('chip-hide-title');
-        } else if (posClass === 'chip-end' && !showEnd) {
+        if (!showTitle) {
           chip.textContent = '\u00a0';
           chip.classList.add('chip-hide-title');
         } else {
