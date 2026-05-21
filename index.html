@@ -2434,7 +2434,7 @@ async function renderCalendar(){
   });
 
   // ── 슬롯 배치 알고리즘 ──
-  const MAX_SLOTS = 3; // 셀당 최대 표시 슬롯 수
+  const MAX_SLOTS = 9; // 10개 미만은 모두 표시
   const weekCount = Math.ceil(cells.length / 7);
 
   for (let w = 0; w < weekCount; w++) {
@@ -2472,6 +2472,8 @@ async function renderCalendar(){
       if (slot === -1) slot = MAX_SLOTS; // 초과 → +N개 더
       slotMap[t.id] = slot;
     });
+    const usedSlots = weekTasks.map(t => slotMap[t.id]).filter(slot => slot < MAX_SLOTS);
+    const visibleSlotCount = usedSlots.length ? Math.max(...usedSlots) + 1 : 0;
 
     // 셀별 chip 삽입
     weekDates.forEach((ds, di) => {
@@ -2487,7 +2489,7 @@ async function renderCalendar(){
       });
       const overCount = dayTasks.filter(t => (slotMap[t.id] ?? MAX_SLOTS) >= MAX_SLOTS).length;
 
-      for (let slot = 0; slot < MAX_SLOTS; slot++) {
+      for (let slot = 0; slot < visibleSlotCount; slot++) {
         const t = dayTasks.find(t => slotMap[t.id] === slot);
         if (!t) {
           // 빈 슬롯 → placeholder
